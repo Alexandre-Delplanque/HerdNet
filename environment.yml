@@ -1,4 +1,4 @@
-name: try
+name: herdnet
 channels:
   - pytorch
   - defaults
