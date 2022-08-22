@@ -1,0 +1,3 @@
+defaults:
+  - train: herdnet
+  - test: herdnet

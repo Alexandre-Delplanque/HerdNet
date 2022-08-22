@@ -1,0 +1,42 @@
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+device_name: 'cuda'
+
+model: 
+  name: 'HerdNet'
+  from_torchvision: False
+  pth_file: '/path/to/your/file.pth'
+  kwargs:
+    num_layers: 34
+    pretrained: False
+    down_ratio: 2
+    head_conv: 64
+
+dataset:
+  img_size: [512,512]
+  anno_type: 'point'
+  num_classes: 4
+  collate_fn: null
+
+  name: 'CSVDataset'
+  csv_file: '/path/to/your/file.csv'
+  root_dir: '/path/to/your/images/folder'
+
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+evaluator:
+  name: 'HerdNetEvaluator'
+  threshold: 5
+  kwargs:
+    lmds_kwargs:
+      kernel_size: [3,3]
+      adapt_ts: 0.3
+
+stitcher:
+  name: 'HerdNetStitcher'
+  kwargs:
+    overlap: 160
+    down_ratio: ${test.model.kwargs.down_ratio}
+    up: False
+    reduction: 'mean'

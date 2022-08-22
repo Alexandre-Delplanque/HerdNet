@@ -1,0 +1,41 @@
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+device_name: 'cuda'
+
+model: 
+  name: 'FasterRCNNResNetFPN'
+  from_torchvision: False
+  pth_file: '/path/to/your/file.pth'
+  kwargs:
+    architecture: 'resnet34'
+    num_classes: ${train.datasets.num_classes}
+    pretrained_backbone: True
+    trainable_backbone_layers: 4
+    min_size: 512
+    max_size: 512
+
+dataset:
+  img_size: [512,512]
+  anno_type: 'bbox'
+  num_classes: 4
+  collate_fn: 'collate_fn'
+
+  name: 'CSVDataset'
+  csv_file: '/path/to/your/file.csv'
+  root_dir: '/path/to/your/images/folder'
+
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+evaluator:
+  name: 'FasterRCNNEvaluator'
+  threshold: 0.3
+  kwargs:
+    print_freq: 10
+
+stitcher:
+  name: 'FasterRCNNStitcher'
+  kwargs:
+    overlap: 160
+    nms_threshold: 0.5
+    score_threshold: 0.7

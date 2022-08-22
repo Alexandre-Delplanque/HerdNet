@@ -1,0 +1,117 @@
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+seed: 1
+device_name: 'cuda'
+
+model: 
+  name: 'HerdNet'
+  from_torchvision: False
+  load_from: null
+  resume_from: null
+  kwargs:
+    num_layers: 34
+    pretrained: True
+    down_ratio: 2
+    head_conv: 64
+
+losses:
+  FocalLoss:
+    print_name: 'focal_loss'
+    from_torch: False
+    output_idx: 0
+    target_idx: 0
+    lambda_const: 1.0
+    kwargs:
+      reduction: 'mean'
+      normalize: False
+  CrossEntropyLoss:
+    print_name: 'ce_loss'
+    from_torch: True
+    output_idx: 1
+    target_idx: 1
+    lambda_const: 1.0
+    kwargs:
+      reduction: 'mean'
+      weight: [0.1,5.,15.,1.]
+
+datasets:
+  img_size: [512,512]
+  anno_type: 'point'
+  num_classes: 4 
+  collate_fn: null
+  
+  train:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+    
+    sample_on: null
+
+    albu_transforms:
+      HorizontalFlip:
+        p: 0.5
+      MotionBlur:
+        p: 0.5
+      Normalize:
+        p: 1.0
+    
+    end_transforms:
+      MultiTransformsWrapper:
+        FIDT:
+          num_classes: ${train.datasets.num_classes}
+          down_ratio: ${train.model.kwargs.down_ratio}
+        PointsToMask:
+          radius: 2
+          num_classes: ${train.datasets.num_classes}
+          squeeze: True
+          down_ratio: 32
+
+  validate:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+
+    albu_transforms:
+      Normalize:
+        p: 1.0
+    
+    end_transforms:
+      DownSample:
+        down_ratio: ${train.model.kwargs.down_ratio}
+        anno_type: ${train.datasets.anno_type}
+
+training_settings:
+  trainer: 'Trainer'
+  print_freq: 100
+  batch_size: 4
+  optimizer: 'adam'
+  lr: 1e-4
+  weight_decay: 0.0005
+  auto_lr:
+    mode: 'max'
+    patience: 10
+    threshold: 1e-4
+    threshold_mode: 'rel'
+    cooldown: 10
+    min_lr: 1e-6
+    verbose: True
+  warmup_iters: 100
+  vizual_fn: null
+  epochs: 100
+  evaluator: 
+    name: 'HerdNetEvaluator'
+    threshold: 5
+    select_mode: 'max'
+    validate_on: 'f1_score'
+    kwargs:
+      print_freq: 10
+      lmds_kwargs:
+        kernel_size: [3,3]
+        adapt_ts: 0.3
+  stitcher:
+    name: 'HerdNetStitcher'
+    kwargs:
+      overlap: 0
+      down_ratio: ${train.model.kwargs.down_ratio}
+      up: False
+      reduction: 'mean'

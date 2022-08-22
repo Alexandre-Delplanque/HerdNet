@@ -1,0 +1,85 @@
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+seed: 1
+device_name: 'cuda'
+
+model: 
+  name: 'FasterRCNNResNetFPN'
+  from_torchvision: False
+  load_from: null
+  resume_from: null
+  kwargs:
+    architecture: 'resnet34'
+    num_classes: ${train.datasets.num_classes}
+    pretrained_backbone: True
+    trainable_backbone_layers: 4
+    class_weights: [0.1,5.,15.,1.]
+    min_size: 512
+    max_size: 512
+
+losses: null
+
+datasets:
+  img_size: [512,512]
+  anno_type: 'bbox'
+  num_classes: 4
+  collate_fn: 'collate_fn'
+  
+  train:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+    
+    sample_on: null
+
+    albu_transforms:
+      HorizontalFlip:
+        p: 0.5
+      MotionBlur:
+        p: 0.5
+      Normalize:
+        p: 1.0
+    
+    end_transforms: null
+
+  validate:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+
+    albu_transforms:
+      Normalize:
+        p: 1.0
+    
+    end_transforms: null
+
+training_settings:
+  trainer: 'FasterRCNNTrainer'
+  print_freq: 100
+  batch_size: 4
+  optimizer: 'adam'
+  lr: 1e-5
+  weight_decay: 0.0005
+  auto_lr:
+    mode: 'max'
+    patience: 10
+    threshold: 1e-5
+    threshold_mode: 'rel'
+    cooldown: 10
+    min_lr: 1e-6
+    verbose: True
+  warmup_iters: 100
+  vizual_fn: null
+  epochs: 100
+  evaluator: 
+    name: 'FasterRCNNEvaluator'
+    threshold: 0.3
+    select_mode: 'max'
+    validate_on: 'f1_score'
+    kwargs:
+      print_freq: 10 
+  stitcher:
+    name: 'FasterRCNNStitcher'
+    kwargs:
+      overlap: 0
+      nms_threshold: 0.5

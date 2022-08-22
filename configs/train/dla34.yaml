@@ -1,0 +1,94 @@
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+seed: 1
+device_name: 'cuda'
+
+model: 
+  name: 'SemSegDLA'
+  from_torchvision: False
+  load_from: null
+  resume_from: null
+  kwargs:
+    num_layers: 34
+    num_classes: ${train.datasets.num_classes}
+    pretrained: True
+    down_ratio: 2
+    head_conv: 64
+
+losses:
+  SSIMLoss:
+    print_name: 'ssim_loss'
+    from_torch: False
+    output_idx: 0
+    target_idx: 0
+    lambda_const: 1.0
+    kwargs:
+      reduction: 'mean'
+      weights: [5.,15.,1.]
+
+datasets:
+  img_size: [512,512]
+  anno_type: 'point'
+  num_classes: 4
+  collate_fn: null
+  
+  train:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+    
+    sample_on: null
+
+    albu_transforms:
+      HorizontalFlip:
+        p: 0.5
+      MotionBlur:
+        p: 0.5
+      Normalize:
+        p: 1.0
+    
+    end_transforms:
+      GaussianMap:
+        sigma: 5
+        radius: 1
+        num_classes: ${train.datasets.num_classes}
+        down_ratio: ${train.model.kwargs.down_ratio}
+
+  validate:
+    name: 'CSVDataset'
+    csv_file: '/path/to/your/file.csv'
+    root_dir: '/path/to/your/images/folder'
+
+    albu_transforms:
+      Normalize:
+        p: 1.0
+    
+    end_transforms:
+      DownSample:
+        down_ratio: ${train.model.kwargs.down_ratio}
+        anno_type: ${train.datasets.anno_type}
+
+training_settings:
+  trainer: 'Trainer'
+  print_freq: 100
+  batch_size: 4
+  optimizer: 'adam'
+  lr: 1e-5
+  weight_decay: 0.0005
+  auto_lr: False
+  warmup_iters: 100
+  epochs: 100
+  vizual_fn: null
+  evaluator:
+    name: 'DensityMapEvaluator'
+    threshold: 5
+    select_mode: 'min'
+    validate_on: 'rmse'
+    kwargs:
+      print_freq: 10
+  stitcher:
+    name: 'DensityMapStitcher'
+    kwargs:
+      overlap: 0
+      down_ratio: ${train.model.kwargs.down_ratio}
+      reduction: 'sum'
