@@ -27,7 +27,7 @@ Note that these metrics have been computed on full-size test images.
 Create and activate the conda environment
 ```console
 conda env create -f environment.yml
-conda activate animaloc
+conda activate herdnet
 ```
 
 Install the code
