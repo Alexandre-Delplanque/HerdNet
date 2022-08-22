@@ -13,16 +13,13 @@ If you use this code in your work, please cite our [paper]():
 
 ## Pretrained models
 
- <font size="2">
 
-| Model   | Params | Dataset                                                      | Species                                          | F1score | MAE¹ | RMSE² |  AC³  |                                           Download                                           |
-| ------- |:------:| ------------------------------------------------------------ | ------------------------------------------------ |:-------:|:----:|:-----:|:-----:|:--------------------------------------------------------------------------------------------:|
-| HerdNet |  18M   | Ennedi 2019                                                  | Camel, donkey, sheep and goat                    |  73.6%  | 6.1  |  9.8  | 15.8% | [PTH file](https://drive.google.com/uc?export=download&id=1CetqTS3VSilMI98Fx_u-yeNr7zBZYh94) |
-| HerdNet |  18M   | [Delplanque et al. (2022)](https://doi.org/10.1002/rse2.234) | Buffalo, elephant, kob, topi, warthog, waterbuck |  83.5%  | 1.9  |  3.6  | 7.8%  | [PTH file](https://drive.google.com/uc?export=download&id=1-WUnBC4BJMVkNvRqalF_HzA1_pRkQTI_) |
+| Model   | Params | Dataset                                                      | Environment | Species                                          | F1score | MAE¹ | RMSE² |  AC³  |                                           Download                                           |
+| ------- |:------:| ------------------------------------------------------------ | ---- | ------------------------------------------------ |:-------:|:----:|:-----:|:-----:|:--------------------------------------------------------------------------------------------:|
+| HerdNet |  18M   | Ennedi 2019                                                  | Desert, xeric shrubland and grassland | Camel, donkey, sheep and goat                    |  73.6%  | 6.1  |  9.8  | 15.8% | [PTH file](https://drive.google.com/uc?export=download&id=1CetqTS3VSilMI98Fx_u-yeNr7zBZYh94) |
+| HerdNet |  18M   | [Delplanque et al. (2022)](https://doi.org/10.1002/rse2.234) | Tropical forest, savanna, tropical shrubland and grassland | Buffalo, elephant, kob, topi, warthog, waterbuck |  83.5%  | 1.9  |  3.6  | 7.8%  | [PTH file](https://drive.google.com/uc?export=download&id=1-WUnBC4BJMVkNvRqalF_HzA1_pRkQTI_) |
 
 ¹MAE, Mean Absolute Error; ²RMSE, Root Mean Square Error; ³AC, Average Confusion between species.
-    
-</font>
 
 Note that these metrics have been computed on full-size test images.
 
@@ -70,14 +67,14 @@ An image containing *n* objects is therefore spread over *n* lines.
 
 ## Quick Start
 Set the seed for reproducibility
-```python=
+```python
 from animaloc.utils.seed import set_seed
 
 set_seed(9292)
 ```
 
 Create point datasets
-```python=
+```python
 import albumentations as A
 
 from animaloc.datasets import CSVDataset
@@ -109,7 +106,7 @@ val_dataset = CSVDataset(
 
 ```
 Create dataloaders
-```python=
+```python
 from torch.utils.data import DataLoader
 
 train_dataloader = DataLoader(
@@ -125,14 +122,14 @@ val_dataloader = DataLoader(
     )
 ```
 Instanciate HerdNet
-```python=
+```python
 from animaloc.models import HerdNet
 
 herdnet = HerdNet(num_classes=num_classes, down_ratio=down_ratio)
 ```
 
 Define the losses for training HerdNet
-```python=
+```python
 from torch import Tensor
 from animaloc.models import LossWrapper
 from animaloc.train.losses import FocalLoss
@@ -149,7 +146,7 @@ herdnet = LossWrapper(herdnet, losses=losses)
 ```
 
 Train et validate HerdNet
-```python=
+```python
 from torch.optim import Adam
 from animaloc.train import Trainer
 from animaloc.eval import PointsMetrics, HerdNetStitcher, HerdNetEvaluator
@@ -194,7 +191,7 @@ trainer.start(warmup_iters=100, checkpoints='best', select='max', validate_on='f
 ```
 
 Use pretrained model
-```python=
+```python
 from animaloc.models import HerdNet, LossWrapper, load_model
 
 herdnet = HerdNet(num_classes=4, down_ratio=2)
