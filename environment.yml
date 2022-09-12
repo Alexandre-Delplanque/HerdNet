@@ -142,4 +142,3 @@ dependencies:
     - wrapt==1.14.1
     - xmltodict==0.13.0
     - zipp==3.8.1
-prefix: C:\Users\gef\miniconda3\envs\herdnet

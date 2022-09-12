@@ -16,7 +16,11 @@ def load_model(model: torch.nn.Module, pth_path: str) -> torch.nn.Module:
             the model with loaded parameters
     '''
 
-    checkpoint = torch.load(pth_path)
+    map_location = torch.device('cpu')
+    if torch.cuda.is_available():
+        map_location = torch.device('cuda')
+    
+    checkpoint = torch.load(pth_path, map_location=map_location)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     return model

@@ -148,7 +148,7 @@ class HerdNetLMDS(LMDS):
 
         self.up = up
     
-    def __call__(self, outputs: List[torch.Tensor]) -> Tuple[list, list, list, list]:
+    def __call__(self, outputs: List[torch.Tensor]) -> Tuple[list, list, list, list, list]:
         '''
         Args:
             outmaps (torch.Tensor): outputs of HerdNet, i.e. 2 tensors:
@@ -156,8 +156,8 @@ class HerdNetLMDS(LMDS):
                 - class map: [B,C,H/16,W/16],
         
         Returns:
-            Tuple[list,list,list,list]
-                counts, locations, labels, and scores per batch
+            Tuple[list,list,list,list,list]
+                counts, locations, labels, class scores and detection scores per batch
         '''
 
         heatmap, clsmap = outputs
@@ -168,22 +168,20 @@ class HerdNetLMDS(LMDS):
             clsmap = F.interpolate(clsmap, scale_factor=scale_factor, mode='nearest')
 
         # softmax
-        r_clsmap = clsmap[:,1:,:,:]
-        r_clsmap = torch.softmax(r_clsmap, dim=1)
+        cls_scores = torch.softmax(clsmap, dim=1)[:,1:,:,:]
 
         # cat to heatmap
-        outmaps = torch.cat([heatmap, r_clsmap], dim=1)
+        outmaps = torch.cat([heatmap, cls_scores], dim=1)
 
         # LMDS
         batch_size, channels = outmaps.shape[:2]
 
-        b_counts, b_labels, b_scores, b_locs = [], [], [], []
+        b_counts, b_labels, b_scores, b_locs, b_dscores = [], [], [], [], []
         for b in range(batch_size):
 
             _, locs, _ = self._lmds(heatmap[b][0])
 
-            cls_scores = r_clsmap[b]
-            cls_idx = torch.argmax(cls_scores, dim=0)
+            cls_idx = torch.argmax(clsmap[b,1:,:,:], dim=0)
             classes = torch.add(cls_idx, 1)
 
             h_idx = torch.Tensor([l[0] for l in locs]).long()
@@ -191,7 +189,9 @@ class HerdNetLMDS(LMDS):
             labels = classes[h_idx, w_idx].long().tolist()
 
             chan_idx = cls_idx[h_idx, w_idx].long().tolist()
-            scores = cls_scores[chan_idx, h_idx, w_idx].float().tolist()
+            scores = cls_scores[b, chan_idx, h_idx, w_idx].float().tolist()
+
+            dscores = heatmap[b, 0, h_idx, w_idx].float().tolist()
 
             counts = [labels.count(i) for i in range(1, channels)]
 
@@ -199,5 +199,6 @@ class HerdNetLMDS(LMDS):
             b_scores.append(scores)
             b_locs.append(locs)
             b_counts.append(counts)
+            b_dscores.append(dscores)
 
-        return b_counts, b_locs, b_labels, b_scores
+        return b_counts, b_locs, b_labels, b_scores, b_dscores

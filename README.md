@@ -1,4 +1,4 @@
-# HerdNet
+# HerdNet 
 Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?]()"
 
 ![](https://i.imgur.com/MCZWn8Z.jpg)
@@ -53,7 +53,7 @@ Example_2.JPG,896,742,1
 ...
 ```
 
-Bounding boxe dataset:
+Bounding box dataset:
 ```csv
 images,x_min,y_min,x_max,y_max,labels
 Example.JPG,530,1458,585,1750,4
@@ -65,7 +65,9 @@ Example_2.JPG,47,253,65,369,1
 
 An image containing *n* objects is therefore spread over *n* lines.
 
-## Quick Start
+## Quick Start 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github.com/Alexandre-Delplanque/HerdNet/notebooks/demo-training-testing-herdnet.ipynb)
+
 Set the seed for reproducibility
 ```python
 from animaloc.utils.seed import set_seed
@@ -91,10 +93,10 @@ train_dataset = CSVDataset(
         A.VerticalFlip(p=0.5), 
         A.Normalize(p=1.0)
         ],
-    end_transforms = [MultiTransformsWrapper(
+    end_transforms = [MultiTransformsWrapper([
         FIDT(num_classes=num_classes, down_ratio=down_ratio),
         PointsToMask(radius=2, num_classes=num_classes, squeeze=True, down_ratio=int(patch_size//16))
-        )]
+        ])]
     )
 
 val_dataset = CSVDataset(
@@ -125,7 +127,7 @@ Instanciate HerdNet
 ```python
 from animaloc.models import HerdNet
 
-herdnet = HerdNet(num_classes=num_classes, down_ratio=down_ratio)
+herdnet = HerdNet(num_classes=num_classes, down_ratio=down_ratio).cuda()
 ```
 
 Define the losses for training HerdNet
@@ -204,7 +206,7 @@ herdnet = load_model('path/to/the/file.pth')
 ### Creating Patches
 To train a model, such as HerdNet, it is often useful to extract patches from the original full-size images, especially if you have a GPU with limited memory. To do so, you can use the `patcher.py` tool:
 ```console
-python tools/patcher.py <ROOT> <HEIGHT> <WIDTH> <OVERLAP> <DEST> -csv <CSV> -min <MIN> -all <BOOL>
+python tools/patcher.py root height width overlap dest [-csv] [-min] [-all]
 ```
 For help, run:
 ```console
@@ -242,3 +244,29 @@ You can view your ground truth and your model's detections by using the `view.py
 ```console
 python tools/view.py root gt [-dets]
 ```
+
+### Making Inference with a PTH File
+You can get HerdNet detections from new images using the `infer.py` tool. To use it, you will need a `.pth` file obtained using this code, which also contains the label-species correspondence (`classes`) as well as the mean (`mean`) and std (`std`) values for normalization (see the code snippet below to add this information in your `.pth` file). This tool exports the detections in `.csv` format, the plots of the detections on the images, and thumbnails of the detected animals. All this is saved in the same folder as the one containing the images (i.e. `-root`). You can adjust the size of the thumbnails by changing the `-ts` argument (defaults to 256), the frequency of the prints by changing the `-pf` argument (defaults to 10), as well as the computing device by changing the `-device` argument (defaults to cuda).
+```console
+python tools/infer.py root pth [-ts] [-pf] [-device]
+```
+
+For help, run:
+```console
+python tools/infer.py -h
+```
+
+Code snippet to add the required information in the pth file: 
+```python
+import torch
+
+pth_file = torch.load('path/to/the/file.pth')
+pth_file['classes'] = {1:'species_1', 2:'species_2', ...}
+pth_file['mean'] = [0.485, 0.456, 0.406]
+pth_file['std'] = [0.229, 0.224, 0.225] 
+torch.save(pth_file, 'path/to/the/file.pth')
+```
+
+## Colab Demo
+Here is a [Google Colab demo](https://colab.research.google.com/github.com/Alexandre-Delplanque/HerdNet/notebooks/demo-training-testing-herdnet.ipynb) based on the UAV nadir dataset used in the paper:
+> *Delplanque, A., Foucher, S., Lejeune, P., Linchant, J. and Théau, J. (2022), Multispecies detection and identification of African mammals in aerial imagery using convolutional neural networks. Remote Sens Ecol Conserv, 8: 166-179. https://doi.org/10.1002/rse2.234*.

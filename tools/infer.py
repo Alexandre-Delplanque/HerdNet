@@ -1,0 +1,146 @@
+import argparse
+import torch
+import os
+import pandas
+import warnings
+import numpy
+import PIL
+
+import albumentations as A
+
+from torch.utils.data import DataLoader
+from PIL import Image
+
+from animaloc.data.transforms import DownSample
+from animaloc.models import LossWrapper, HerdNet
+from animaloc.eval import HerdNetStitcher, HerdNetEvaluator
+from animaloc.eval.metrics import PointsMetrics
+from animaloc.datasets import CSVDataset
+from animaloc.utils.useful_funcs import mkdir, current_date
+from animaloc.vizual import draw_points, draw_text
+
+warnings.filterwarnings('ignore')
+PIL.Image.MAX_IMAGE_PIXELS = None
+
+
+parser = argparse.ArgumentParser(
+    prog='inference', 
+    description='Collects the detections of a pretrained HerdNet model on a set of images '
+    )
+
+parser.add_argument('root', type=str,
+    help='path to the JPG images folder (str)')
+parser.add_argument('pth', type=str,
+    help='path to PTH file containing your model parameters (str)')  
+parser.add_argument('-device', type=str, default='cuda',
+    help='device on which model and images will be allocated (str). \
+        Possible values are \'cpu\' or \'cuda\'. Defaults to \'cuda\'.')
+parser.add_argument('-ts', type=int, default=256,
+    help='thumbnail size. Defaults to 256.')
+parser.add_argument('-pf', type=int, default=10,
+    help='print frequence. Defaults to 10.')
+
+args = parser.parse_args()
+
+def main():
+
+    # Create destination folder
+    curr_date = current_date()
+    dest = os.path.join(args.root, f"{curr_date}_HerdNet_results")
+    mkdir(dest)
+    
+    # Read info from PTH file
+    map_location = torch.device('cpu')
+    if torch.cuda.is_available():
+        map_location = torch.device('cuda')
+
+    checkpoint = torch.load(args.pth, map_location=map_location)
+    classes = checkpoint['classes']
+    num_classes = len(classes) + 1
+    img_mean = checkpoint['mean']
+    img_std = checkpoint['std']
+    
+    # Prepare dataset and dataloader
+    img_names = [i for i in os.listdir(args.root) 
+            if i.endswith(('.JPG','.jpg','.JPEG','.jpeg'))]
+    n = len(img_names)
+    df = pandas.DataFrame(data={'images': img_names, 'x': [0]*n, 'y': [0]*n, 'labels': [1]*n})
+    dataset = CSVDataset(
+        csv_file = df,
+        root_dir = args.root,
+        albu_transforms = [A.Normalize(mean=img_mean, std=img_std)],
+        end_transforms = [DownSample(down_ratio = 2, anno_type = 'point')]
+        )
+    
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False,
+        sampler=torch.utils.data.SequentialSampler(dataset))
+    
+    # Build the trained model
+    print('Building the model ...')
+    device = torch.device(args.device)
+    model = HerdNet(num_classes=num_classes, pretrained=False)
+    model = LossWrapper(model, [])
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Build the evaluator
+    stitcher = HerdNetStitcher(
+            model = model,
+            size = (512,512),
+            overlap = 160,
+            down_ratio = 2,
+            up = True, 
+            reduction = 'mean',
+            device_name = device
+            ) 
+
+    metrics = PointsMetrics(5, num_classes = num_classes)
+    evaluator = HerdNetEvaluator(
+        model = model,
+        dataloader = dataloader,
+        metrics = metrics,
+        lmds_kwargs = dict(kernel_size=(3,3), adapt_ts=0.2),
+        device_name = device,
+        print_freq = args.pf,
+        stitcher = stitcher,
+        work_dir=dest,
+        header = '[INFERENCE]'
+        )
+
+    # Start inference
+    print('Starting inference ...')
+    out = evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
+
+    # Save the detections
+    print('Saving the detections ...')
+    detections = evaluator.detections
+    detections.dropna(inplace=True)
+    detections['species'] = detections['labels'].map(classes)
+    detections.to_csv(os.path.join(dest, f'{curr_date}_detections.csv'), index=False)
+
+    # Draw detections on images and create thumbnails
+    print('Exporting plots and thumbnails ...')
+    dest_plots = os.path.join(dest, 'plots')
+    mkdir(dest_plots)
+    dest_thumb = os.path.join(dest, 'thumbnails')
+    mkdir(dest_thumb)
+    img_names = numpy.unique(detections['images'].values).tolist()
+    for img_name in img_names:
+        img = Image.open(os.path.join(args.root, img_name))
+        img_cpy = img.copy()
+        pts = list(detections[detections['images']==img_name][['y','x']].to_records(index=False))
+        pts = [(y, x) for y, x in pts]
+        output = draw_points(img, pts, color='red', size=10)
+        output.save(os.path.join(dest_plots, img_name), quality=95)
+
+        # Create and export thumbnails
+        sp_score = list(detections[detections['images']==img_name][['species','scores']].to_records(index=False))
+        for i, ((y, x), (sp, score)) in enumerate(zip(pts, sp_score)):
+            off = args.ts//2
+            coords = (x - off, y - off, x + off, y + off)
+            thumbnail = img_cpy.crop(coords)
+            score = round(score * 100, 0)
+            thumbnail = draw_text(thumbnail, f"{sp} | {score}%", position=(10,5), font_size=int(0.08*args.ts))
+            thumbnail.save(os.path.join(dest_thumb, img_name[:-4] + f'_{i}.JPG'))
+
+if __name__ == '__main__':
+    main()
