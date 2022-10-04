@@ -7,8 +7,9 @@ import cv2
 
 from albumentations import PadIfNeeded
 
+from tqdm import tqdm
+
 from animaloc.data import ImageToPatches, PatchesBuffer, save_batch_images
-from animaloc.utils.progress import progressbar
 
 parser = argparse.ArgumentParser(prog='patcher', description='Cut images into patches')
 
@@ -39,7 +40,7 @@ def main():
         patches_buffer = PatchesBuffer(args.csv, args.root, (args.height, args.width), overlap=args.overlap, min_visibility=args.min).buffer
         patches_buffer.drop(columns='limits').to_csv(os.path.join(args.dest, 'gt.csv'), index=False)
 
-    for img_path in progressbar(images_paths, 'Exporting patches', length=50):
+    for img_path in tqdm(images_paths, desc='Exporting patches'):
         pil_img = PIL.Image.open(img_path)
         img_tensor = torchvision.transforms.ToTensor()(pil_img)
         img_name = os.path.basename(img_path)

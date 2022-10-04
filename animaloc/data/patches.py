@@ -9,7 +9,7 @@ from torchvision.utils import make_grid, save_image
 
 from typing import Union, Tuple
 
-from animaloc.utils.progress import progressbar
+from tqdm import tqdm
 
 from .types import BoundingBox
 from .annotations import Annotations, AnnotationsFromCSV, dict_from_objects
@@ -361,7 +361,7 @@ class PatchesBuffer:
         buffer = []
 
         # loop through images name
-        for img_name in progressbar(numpy.unique(self.data.images), 'Creating the buffer', length=50):
+        for img_name in tqdm(numpy.unique(self.data.images), desc='Creating the buffer'):
             
             img_path = os.path.join(self.root_dir, img_name)
             pil_image = PIL.Image.open(img_path).convert('RGB')

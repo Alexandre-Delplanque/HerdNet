@@ -32,6 +32,10 @@ parser.add_argument('root', type=str,
     help='path to the JPG images folder (str)')
 parser.add_argument('pth', type=str,
     help='path to PTH file containing your model parameters (str)')  
+parser.add_argument('-size', type=int, default=512,
+    help='patch size use for stitching. Defaults to 512.')
+parser.add_argument('-over', type=int, default=160,
+    help='overlap for stitching. Defaults to 160.')
 parser.add_argument('-device', type=str, default='cuda',
     help='device on which model and images will be allocated (str). \
         Possible values are \'cpu\' or \'cuda\'. Defaults to \'cuda\'.')
@@ -85,8 +89,8 @@ def main():
     # Build the evaluator
     stitcher = HerdNetStitcher(
             model = model,
-            size = (512,512),
-            overlap = 160,
+            size = (args.size,args.size),
+            overlap = args.over,
             down_ratio = 2,
             up = True, 
             reduction = 'mean',
@@ -98,7 +102,7 @@ def main():
         model = model,
         dataloader = dataloader,
         metrics = metrics,
-        lmds_kwargs = dict(kernel_size=(3,3), adapt_ts=0.2),
+        lmds_kwargs = dict(kernel_size=(3,3), adapt_ts=0.2, neg_ts=0.1),
         device_name = device,
         print_freq = args.pf,
         stitcher = stitcher,
