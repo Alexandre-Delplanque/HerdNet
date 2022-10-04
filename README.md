@@ -66,7 +66,7 @@ Example_2.JPG,47,253,65,369,1
 An image containing *n* objects is therefore spread over *n* lines.
 
 ## Quick Start 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github.com/Alexandre-Delplanque/HerdNet/notebooks/demo-training-testing-herdnet.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb)
 
 Set the seed for reproducibility
 ```python
@@ -268,5 +268,5 @@ torch.save(pth_file, 'path/to/the/file.pth')
 ```
 
 ## Colab Demo
-Here is a [Google Colab demo](https://colab.research.google.com/github.com/Alexandre-Delplanque/HerdNet/notebooks/demo-training-testing-herdnet.ipynb) based on the UAV nadir dataset used in the paper:
+Here is a [Google Colab demo](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb) based on the UAV nadir dataset used in the paper:
 > *Delplanque, A., Foucher, S., Lejeune, P., Linchant, J. and Théau, J. (2022), Multispecies detection and identification of African mammals in aerial imagery using convolutional neural networks. Remote Sens Ecol Conserv, 8: 166-179. https://doi.org/10.1002/rse2.234*.
