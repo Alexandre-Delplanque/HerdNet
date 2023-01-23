@@ -1,9 +1,16 @@
 # HerdNet 
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb)
+
 Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?]()"
 
+## Model Architecture
+![](https://i.imgur.com/kevmlhV.png)
+
+## Detection Examples
 ![](https://i.imgur.com/MCZWn8Z.jpg)
 
-
+## License
+HerdNet follows [`CC BY-NC-SA-4.0`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md) license and is thus open source and freely available for academic research purposes only, no commercial use is permitted.
 
 ## Citation
 If you use this code in your work, please cite our [paper]():
@@ -11,8 +18,8 @@ If you use this code in your work, please cite our [paper]():
 @article{}
 ```
 
-## Pretrained models
-
+## Pretrained Models
+Models were trained separatly for each of the two datasets. These pre-trained models follows the same license ([`CC BY-NC-SA-4.0`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md)) as the source code.
 
 | Model   | Params | Dataset                                                      | Environment | Species                                          | F1score | MAE¹ | RMSE² |  AC³  |                                           Download                                           |
 | ------- |:------:| ------------------------------------------------------------ | ---- | ------------------------------------------------ |:-------:|:----:|:-----:|:-----:|:--------------------------------------------------------------------------------------------:|

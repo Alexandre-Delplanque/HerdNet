@@ -1,3 +1,20 @@
+__copyright__ = \
+    """
+    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    All rights reserved.
+
+    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
+    It is to be used for academic research purposes only, no commercial use is permitted.
+
+    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
+
+    Last modification: November 23, 2022
+    """
+__author__ = "Alexandre Delplanque"
+__license__ = "CC BY-NC-SA 4.0"
+__version__ = "0.1.0"
+
+
 import torch
 
 import torch.nn as nn
@@ -58,6 +75,7 @@ class HerdNet(nn.Module):
 
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]
         self.dla_up = dla_modules.DLAUp(channels[self.first_level:], scales=scales)
+        # self.cls_dla_up = dla_modules.DLAUp(channels[-3:], scales=scales[:3])
 
         # bottleneck conv
         self.bottleneck_conv = nn.Conv2d(
@@ -102,8 +120,10 @@ class HerdNet(nn.Module):
         encode[-1] = bottleneck
 
         decode_hm = self.dla_up(encode[self.first_level:])
+        # decode_cls = self.cls_dla_up(encode[-3:])
 
         heatmap = self.loc_head(decode_hm)
         clsmap = self.cls_head(bottleneck)
+        # clsmap = self.cls_head(decode_cls)
 
         return heatmap, clsmap

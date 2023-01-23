@@ -1,7 +1,26 @@
+__copyright__ = \
+    """
+    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    All rights reserved.
+
+    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
+    It is to be used for academic research purposes only, no commercial use is permitted.
+
+    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
+
+    Last modification: November 23, 2022
+    """
+__author__ = "Alexandre Delplanque"
+__license__ = "CC BY-NC-SA 4.0"
+__version__ = "0.1.0"
+
+
 import os
 import PIL
 
 from typing import Optional, List, Any, Dict
+
+from ..data.types import BoundingBox
 
 from .register import DATASETS
 
@@ -55,6 +74,7 @@ class FolderDataset(CSVDataset):
 
         self.folder_images = [i for i in os.listdir(self.root_dir) 
                                 if i.endswith(('.JPG','.jpg','.JPEG','.jpeg'))]
+        self._img_names = self.folder_images
         
         self.anno_keys = self.data.columns
 
@@ -87,9 +107,12 @@ class FolderDataset(CSVDataset):
 
         else:
             for key in anno_keys:
-                target.update({key: []})
+                if self.anno_type == 'BoundingBox':
+                    if key == 'annos':  
+                        target.update({key: [[0,1,2,3]]})
+                    elif key == 'labels':
+                        target.update({key: [0]})
+                else:        
+                    target.update({key: []})
         
         return target
-
-    def __len__(self):
-        return len(set(self.folder_images))

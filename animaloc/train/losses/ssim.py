@@ -1,4 +1,24 @@
-''' Code adapted from https://github.com/Po-Hsun-Su/pytorch-ssim/blob/master/pytorch_ssim/__init__.py '''
+__copyright__ = \
+    """
+    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    All rights reserved.
+
+    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
+    It is to be used for academic research purposes only, no commercial use is permitted.
+
+    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
+
+    Last modification: November 23, 2022
+    """
+__author__ = "Alexandre Delplanque"
+__license__ = "CC BY-NC-SA 4.0"
+__version__ = "0.1.0"
+
+
+''' 
+Following code adapted from https://github.com/Po-Hsun-Su/pytorch-ssim/blob/master/pytorch_ssim/__init__.py 
+Free to use under the MIT license.
+'''
 
 import torch
 import torch.nn.functional as F
