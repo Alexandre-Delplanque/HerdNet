@@ -1,7 +1,7 @@
 # HerdNet 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb)
 
-Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?]()"
+Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?](https://doi.org/10.1016/j.isprsjprs.2023.01.025)"
 
 ## Model Architecture
 ![](https://i.imgur.com/kevmlhV.png)
@@ -13,9 +13,19 @@ Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count 
 HerdNet follows [`CC BY-NC-SA-4.0`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md) license and is thus open source and freely available for academic research purposes only, no commercial use is permitted.
 
 ## Citation
-If you use this code in your work, please cite our [paper]():
+If you use this code in your work, please cite our [paper](https://doi.org/10.1016/j.isprsjprs.2023.01.025):
 ```
-@article{}
+@article{
+    title = {From crowd to herd counting: How to precisely detect and count African mammals using aerial imagery and deep learning?},
+    journal = {ISPRS Journal of Photogrammetry and Remote Sensing},
+    volume = {197},
+    pages = {167-180},
+    year = {2023},
+    issn = {0924-2716},
+    doi = {https://doi.org/10.1016/j.isprsjprs.2023.01.025},
+    url = {https://www.sciencedirect.com/science/article/pii/S092427162300031X},
+    author = {Alexandre Delplanque and Samuel Foucher and Jérôme Théau and Elsa Bussière and Cédric Vermeulen and Philippe Lejeune}
+    }
 ```
 
 ## Pretrained Models
