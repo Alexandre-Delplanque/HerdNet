@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 13, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -32,7 +32,8 @@ class FocalLoss(torch.nn.Module):
         reduction: str = 'sum',
         weights: Optional[torch.Tensor] = None,
         density_weight: Optional[str] = None,
-        normalize: bool = False
+        normalize: bool = False,
+        eps: float = 1e-6
         ) -> None:
         '''
         Args:
@@ -48,6 +49,7 @@ class FocalLoss(torch.nn.Module):
                 the number of locations. Defaults to None
             normalize (bool, optional): set to True to normalize the loss according to 
                 the number of positive samples. Defaults to False
+            eps (float, optional): for numerical stability. Defaults to 1e-6.
         '''
 
         super().__init__()
@@ -61,6 +63,7 @@ class FocalLoss(torch.nn.Module):
         self.weights = weights
         self.density_weight = density_weight
         self.normalize = normalize
+        self.eps = eps
     
     def forward(self, output: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         '''
@@ -77,7 +80,6 @@ class FocalLoss(torch.nn.Module):
     def _neg_loss(self, output: torch.Tensor, target: torch.Tensor):
         ''' Focal loss, adapted from CenterNet 
         https://github.com/xingyizhou/CenterNet/blob/master/src/lib/models/losses.py
-
         Args:
             output (torch.Tensor): [B,C,H,W]
             target (torch.Tensor): [B,C,H,W]
@@ -99,6 +101,9 @@ class FocalLoss(torch.nn.Module):
         neg_weights = torch.pow(1 - target, self.beta)
 
         loss = torch.zeros((B,C))
+
+         # avoid NaN when net output is 1.0 or 0.0
+        output = torch.clamp(output, min=self.eps, max=1-self.eps)
 
         pos_loss = torch.log(output) * torch.pow(1 - output, self.alpha) * pos_inds
         neg_loss = torch.log(1 - output) * torch.pow(output, self.alpha) * neg_weights * neg_inds
