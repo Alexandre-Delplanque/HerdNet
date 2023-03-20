@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 13, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -28,7 +28,7 @@ from ..utils.useful_funcs import current_date, get_date_time
 
 class CustomLogger(MetricLogger):
     ''' Custom logger class adapted from torchvision's one '''
-    def __init__(self, delimiter='\t', filename=None, work_dir=None):
+    def __init__(self, delimiter='\t', filename=None, work_dir=None, csv: bool=False):
         super(CustomLogger, self).__init__(delimiter)
 
         self.logger = None
@@ -37,7 +37,8 @@ class CustomLogger(MetricLogger):
             today = current_date()
             self.logfilename = f'{today}_{filename}'
             self.logger = self._create_logger(self.logfilename, work_dir)
-            self.csvlogger = self._create_csv_logger(self.logfilename, work_dir)
+            if csv:
+                self.csvlogger = self._create_csv_logger(self.logfilename, work_dir)
 
     def log_every(self, iterable, print_freq, header=None):
         ''' Override intial method '''
