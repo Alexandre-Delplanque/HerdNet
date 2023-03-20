@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 17, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -21,6 +21,7 @@ import wandb
 import animaloc
 import os
 import torchvision
+import pandas
 
 import albumentations as A
 
@@ -32,9 +33,13 @@ from animaloc.data.transforms import DownSample
 from animaloc.models.utils import load_model, LossWrapper
 from animaloc.eval import Evaluator, Metrics, PointsMetrics, BoxesMetrics
 from animaloc.eval.stitchers import Stitcher
-from animaloc.utils.useful_funcs import mkdir
+from animaloc.utils.useful_funcs import current_date, mkdir
 from animaloc.vizual import PlotPrecisionRecall
 
+def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
+    assert 'species' in df.columns
+    cls_dict = dict(map(reversed, cls_dict.items()))
+    df['labels'] = df['species'].map(cls_dict)
 
 def _build_model(cfg: DictConfig) -> torch.nn.Module:
 
@@ -141,13 +146,23 @@ def main(cfg: DictConfig) -> None:
             threshold = cfg.evaluator.threshold
             )
         )
+    
+    date = current_date()
+    wandb.run.name = f'{date}_' + cfg.wandb_run + f'_RUN_{wandb.run.id}'
 
     device = torch.device(cfg.device_name)
 
     # Prepare dataset and dataloader
     print('Building the test dataset ...')
+
+    cls_dict = dict(cfg.dataset.class_def)
+    cls_names = list(cls_dict.values())
+
+    test_df = pandas.read_csv(cfg.dataset.csv_file)
+    _set_species_labels(cls_dict, df = test_df)
+
     test_dataset = animaloc.datasets.__dict__[cfg.dataset.name](
-        csv_file = cfg.dataset.csv_file,
+        csv_file = test_df,
         root_dir = cfg.dataset.root_dir,
         albu_transforms = [A.Normalize(cfg.dataset.mean, cfg.dataset.std)],
         end_transforms = [DownSample(down_ratio=down_ratio, anno_type=cfg.dataset.anno_type)]
@@ -178,22 +193,38 @@ def main(cfg: DictConfig) -> None:
 
     # Save results
     print('Saving the results ...')
+    
+     # 1) PR curves
     plots_path = os.path.join(os.getcwd(), 'plots')
     mkdir(plots_path)
-    pr_curve = PlotPrecisionRecall()
+    pr_curve = PlotPrecisionRecall(legend=True)
     metrics = evaluator._stored_metrics
     for c in range(1, metrics.num_classes):
         rec, pre = metrics.rec_pre_lists(c)
-        pr_curve.feed(rec, pre, str(c))
+        pr_curve.feed(rec, pre, label=cls_dict[c])
     
     pr_curve.save(os.path.join(plots_path, 'precision_recall_curve.png'))
     
+    # 2) metrics per class
     res = evaluator.results
+    cols = res.columns.tolist()
+    str_cls_dict = {str(k): v for k,v in cls_dict.items()}
+    str_cls_dict.update({'binary': 'binary'})
+    res['species'] = res['class'].map(str_cls_dict)
+    res = res[['class', 'species'] + cols[1:]]
     print(res)
-    # print(evaluator._stored_metrics._total_count)
+
     res.to_csv(os.path.join(os.getcwd(), 'metrics_results.csv'), index=False)
 
-    evaluator.detections.to_csv(os.path.join(os.getcwd(), 'detections.csv'), index=False)
+    # 3) confusion matrix
+    cm = pandas.DataFrame(metrics.confusion_matrix, columns=cls_names, index=cls_names)
+    cm.to_csv(os.path.join(os.getcwd(), 'confusion_matrix.csv'))
+    print(cm)
+
+    # 4) detections
+    detections =  evaluator.detections
+    detections['species'] = detections['labels'].map(cls_dict)
+    detections.to_csv(os.path.join(os.getcwd(), 'detections.csv'), index=False)
 
 if __name__ == '__main__':
     main()
