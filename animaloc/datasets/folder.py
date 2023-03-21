@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 21, 2022
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -17,10 +17,13 @@ __version__ = "0.1.0"
 
 import os
 import PIL
+import pandas
+import numpy
 
 from typing import Optional, List, Any, Dict
 
 from ..data.types import BoundingBox
+from ..data.utils import group_by_image
 
 from .register import DATASETS
 
@@ -74,12 +77,21 @@ class FolderDataset(CSVDataset):
 
         self.folder_images = [i for i in os.listdir(self.root_dir) 
                                 if i.endswith(('.JPG','.jpg','.JPEG','.jpeg'))]
-        self._img_names = self.folder_images
-        
+    
+        self._img_names = self.folder_images        
         self.anno_keys = self.data.columns
+        self.data['from_folder'] = 0
+
+        folder_only_images = numpy.setdiff1d(self.folder_images, self.data['images'].unique().tolist())
+        folder_df = pandas.DataFrame(data=dict(images = folder_only_images))
+        folder_df['from_folder'] = 1
+
+        self.data = pandas.concat([self.data, folder_df], ignore_index=True).convert_dtypes()
+
+        self._ordered_img_names = group_by_image(self.data)['images'].values.tolist()
 
     def _load_image(self, index: int) -> PIL.Image.Image:
-        img_name = list(set(self.folder_images))[index]
+        img_name = self._ordered_img_names[index]
         img_path = os.path.join(self.root_dir, img_name)
 
         pil_img = PIL.Image.open(img_path).convert('RGB')
@@ -88,7 +100,7 @@ class FolderDataset(CSVDataset):
         return pil_img
 
     def _load_target(self, index: int) -> Dict[str,List[Any]]:
-        img_name = list(set(self.folder_images))[index]
+        img_name = self._ordered_img_names[index]
         annotations = self.data[self.data['images'] == img_name]
         anno_keys = list(self.anno_keys)
         anno_keys.remove('images')
@@ -98,7 +110,8 @@ class FolderDataset(CSVDataset):
         'image_name': [img_name]
         }
 
-        if len(annotations) > 0:
+        nan_in_annos =  annotations[anno_keys].isnull().values.any()
+        if not nan_in_annos:
             for key in anno_keys:
                 target.update({key: list(annotations[key])})
 
