@@ -25,13 +25,10 @@ import torchvision
 
 import albumentations as A
 
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import Sampler, WeightedRandomSampler
-from sklearn.model_selection import StratifiedGroupKFold
+from torch.utils.data import DataLoader, Dataset
 from omegaconf import DictConfig
 from typing import Callable, Optional
 
-from animaloc.data.utils import group_by_image, weighted_samples
 from animaloc.models.utils import LossWrapper, load_model
 from animaloc.eval import Evaluator, PointsMetrics, Stitcher, BoxesMetrics, ImageLevelMetrics
 
@@ -71,13 +68,21 @@ def _load_end_transforms(tr_cfg: DictConfig) -> Optional[list]:
     else:
         return None
 
-def _build_sampler(df: pandas.DataFrame, col: str) -> Sampler:
-    data = group_by_image(df)
-    target_var = torch.tensor(data[col].values)
-    samples = weighted_samples(target_var, [0.0, 1.0])
-    sampler = WeightedRandomSampler(samples, len(samples), replacement=False)
+def _build_sampler(sampler_cfg: DictConfig, dl_kwargs: dict, dataset: Dataset) -> dict:
+    dl_kwargs = dl_kwargs.copy()
+    
+    sampler = animaloc.data.samplers.__dict__[sampler_cfg.name]
+    if sampler_cfg.data_source == 'dataset':
+        sampler = sampler(dataset, **dict(sampler_cfg.kwargs))
+    else:
+        raise NotImplementedError
 
-    return sampler
+    if sampler_cfg.batch:
+        dl_kwargs.update(dict(batch_size=1, shuffle=False, batch_sampler=sampler))
+    else:
+        dl_kwargs.update(dict(shuffle=False, sampler=sampler))
+
+    return dl_kwargs
 
 def _get_collate_fn(cfg: DictConfig) -> Callable:
     fn = cfg.datasets.collate_fn
@@ -240,15 +245,17 @@ def main(cfg: DictConfig) -> None:
         end_transforms = _load_end_transforms(train_args.end_transforms)
         )
     
-    sampler = None
-    train_shuffle = True
-    if train_args.sample_on is not None:
-        sampler = _build_sampler(df=train_dataset.data, col=train_args.sample_on)
-        train_shuffle = False
+    train_dl_kwargs = dict(
+        batch_size=cfg.training_settings.batch_size,
+        shuffle=True,
+        collate_fn=_get_collate_fn(cfg)
+        )
+    
+    if train_args.sampler is not None:
+        train_dl_kwargs = _build_sampler(train_args.sampler, dl_kwargs=train_dl_kwargs, 
+            dataset=train_dataset)
 
-    train_dataloader = DataLoader(train_dataset, 
-        batch_size=cfg.training_settings.batch_size, shuffle=train_shuffle, sampler=sampler,
-        collate_fn=_get_collate_fn(cfg))
+    train_dataloader = DataLoader(train_dataset, **train_dl_kwargs)
     
     val_dataloader = None
     if val_args is not None:
