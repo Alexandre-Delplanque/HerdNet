@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 21, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -21,3 +21,4 @@ from .transforms import *
 from .types import *
 from .utils import *
 from .batch_utils import *
+from .samplers import *
