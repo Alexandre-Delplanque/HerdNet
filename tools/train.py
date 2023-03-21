@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 17, 2023
+    Last modification: March 21, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -36,7 +36,7 @@ from animaloc.models.utils import LossWrapper, load_model
 from animaloc.eval import Evaluator, PointsMetrics, Stitcher, BoxesMetrics, ImageLevelMetrics
 
 from animaloc.utils.seed import set_seed
-from animaloc.utils.useful_funcs import current_date, mkdir
+from animaloc.utils.useful_funcs import current_date
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
     assert 'species' in df.columns
@@ -383,6 +383,16 @@ def main(cfg: DictConfig) -> None:
             validate_on = validate_on, 
             wandb_flag = True
             )
+    
+    # Add information in .pth files
+    for pth_name in ['best_model.pth', 'latest_model.pth']:
+        path = os.path.join(os.curdir, pth_name)
+        pth_file = torch.load(path)
+        norm_trans = _load_albu_transforms(train_args.albu_transforms)[-1]
+        pth_file['classes'] = dict(cfg.datasets.class_def)
+        pth_file['mean'] =  list(norm_trans.mean)
+        pth_file['std'] = list(norm_trans.std)
+        torch.save(pth_file, path)
 
 if __name__ == '__main__':
     main()
