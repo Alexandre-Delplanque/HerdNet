@@ -1,3 +1,37 @@
+# [v0.2.0](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.0) (March 29, 2023)
+## New features
+### Classes and functions
+- `CustomLogger` : Argument to disable logging to CSV files (use to much memory).
+- `Trainer`: Arguments to set the validation frequency during training (`valid_freq`) and to choose whether to save logs to CSV files (`csv_logger`).
+- `HerdNet`: New method for reshaping classes (`reshape_classes()`), useful for loading pre-trained parameters.
+- `FolderDataset`: New flag (`from_folder`) in `self.data` attribute.
+### Python modules
+- `sampler.py`: New python module for hosting samplers for data loading.
+### Tools
+- `train.py`: New keys: `wandb_run`, `model.freeze` (HerdNet only), `datasets.class_def`, `datasets.sampler` and `training_settings.valid_freq`. Now use the class definition (i.e., `datasets.class_def`) to make sure the labels match the species names.
+- `test.py`: New keys: `wandb_run` and `dataset.class_def`. Now use the class definition (i.e., `dataset.class_def`) 1) to make sure the labels match the species names, and 2) for plotting precision-recall curves, saving the detections, the metrics and the confusion matrix.
+
+## Commits
+Alexandre-Delplanque (17):
+- [ff94a5e](https://github.com/Alexandre-Delplanque/HerdNet/commit/ff94a5e4bcbe5c7efa37354f64d56859b1f0a388) - chore: update README.md
+- [03ccd66](https://github.com/Alexandre-Delplanque/HerdNet/commit/03ccd66dfdd70e61677537e5755579eb4386fac6) - version: update version number and modified date
+- [4791624](https://github.com/Alexandre-Delplanque/HerdNet/commit/4791624c0d32760e424d6b7b863763e54c273313) - chore: add CHANGELOG.md
+- [eb159c7](https://github.com/Alexandre-Delplanque/HerdNet/commit/eb159c72270302265295a8bbff6fc85fc9b6c7a4) - docs: create doc folder and update configs md
+- [f18f9f9](https://github.com/Alexandre-Delplanque/HerdNet/commit/f18f9f9ef2a8702c467d77a127333f1c7d303d60) - feat: add new keys to configs
+- [7f91167](https://github.com/Alexandre-Delplanque/HerdNet/commit/7f911677237ef35aadb4378a8ef21d088a9070f8) - feat: add sampler option in train.py tool
+- [bea0fc4](https://github.com/Alexandre-Delplanque/HerdNet/commit/bea0fc4cfc616c94ee0f124b635b2f3cccb250e6) - feat: samplers.py - hosts samplers for dataloading
+- [d883b49](https://github.com/Alexandre-Delplanque/HerdNet/commit/d883b49bbbe954df6eb4b5c307b943a261fbb4bc) - feat: save classes, mean, std in PTH files
+- [8189dc7](https://github.com/Alexandre-Delplanque/HerdNet/commit/8189dc746577375322d4d30bd6958c74a801fc6a) - feat: add 'from_folder' flag in FolderDataset data
+- [907a221](https://github.com/Alexandre-Delplanque/HerdNet/commit/907a221668641627013f13831e09296c95fbeea1) - feat: +class def., +labeled results, +conf. matrix
+- [7b4bc74](https://github.com/Alexandre-Delplanque/HerdNet/commit/7b4bc7461619aa3e07f474fa15e447193129dcc4) - feat: +class def., +validation freq., -cross-val
+- [884673d](https://github.com/Alexandre-Delplanque/HerdNet/commit/884673d15869ecb0f8dc335f527b5a09ce0c91e4) - fix: add head_conv attribute to HerdNet module
+- [7b88af8](https://github.com/Alexandre-Delplanque/HerdNet/commit/7b88af8cfeee172d7da56196727a3f6c7f8da9fb) - feat: valid_freq and csv_logger args (Trainer)
+- [d88ff21](https://github.com/Alexandre-Delplanque/HerdNet/commit/d88ff21b8dab870bf6a0c04e38269ed3ee4ffc36) - feat: add option to disable csv logs
+- [7071569](https://github.com/Alexandre-Delplanque/HerdNet/commit/707156928508923d9ac78efcd52ade8fe963929d) - fix: PointsToMask one-hot encoding option
+- [782d877](https://github.com/Alexandre-Delplanque/HerdNet/commit/782d877fdd1a50f3590a5138814f571ded9bef26) - fix: FocalLoss, avoid NaN when output is 0 or 1
+- [deec190](https://github.com/Alexandre-Delplanque/HerdNet/commit/deec19098bcbadaf73e3ff624eafa5382f5e5fec) - add article reference
+
+
 # [v0.1.0](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.1.0) (January 23, 2023)
 Initial version of the code, used for producing the results of the reference paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?](https://doi.org/10.1016/j.isprsjprs.2023.01.025)".
 
