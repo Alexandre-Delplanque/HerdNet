@@ -1,5 +1,6 @@
 wandb_project: 'Sample project'
 wandb_entity: 'youraccountname'
+wandb_run: 'myrun'
 seed: 1
 device_name: 'cuda'
 
@@ -24,13 +25,18 @@ datasets:
   anno_type: 'bbox'
   num_classes: 4
   collate_fn: 'collate_fn'
+
+  class_def:
+    1: 'camel'
+    2: 'donkey'
+    3: 'sheep/goat'
   
   train:
     name: 'CSVDataset'
     csv_file: '/path/to/your/file.csv'
     root_dir: '/path/to/your/images/folder'
     
-    sample_on: null
+    sampler: null
 
     albu_transforms:
       HorizontalFlip:
@@ -55,6 +61,7 @@ datasets:
 
 training_settings:
   trainer: 'FasterRCNNTrainer'
+  valid_freq: 1
   print_freq: 100
   batch_size: 4
   optimizer: 'adam'

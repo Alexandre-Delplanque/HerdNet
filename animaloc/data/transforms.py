@@ -8,11 +8,11 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 29, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import PIL
@@ -20,9 +20,6 @@ import numpy
 import torch
 import torchvision 
 import scipy
-import random
-import warnings
-import albumentations
 
 from typing import Dict, Optional, Union, Tuple, List
 
@@ -205,7 +202,8 @@ class PointsToMask:
         num_classes: int = 2, 
         onehot: bool = False,
         squeeze: bool = True,
-        down_ratio: Optional[int] = None
+        down_ratio: Optional[int] = None,
+        target_type: str = 'long'
         ) -> None:
         ''' 
         Args:
@@ -222,13 +220,18 @@ class PointsToMask:
             down_ratio (int, optional): if specified, the target will be downsampled 
                 according to the ratio.
                 Defaults to None
+            target_type (str, optional): output data type of target. Defaults to 'long'.
         '''
 
+        assert target_type in ['long', 'float'], \
+            f"target type must be either 'long' or 'float', got {target_type}"
+        
         self.radius = radius
         self.num_classes = num_classes - 1
         self.onehot = onehot
         self.squeeze = squeeze
         self.down_ratio = down_ratio
+        self.target_type = target_type
 
     def __call__(
         self,
@@ -258,36 +261,30 @@ class PointsToMask:
                 image, target.copy()
                 )
 
+        mask = torch.zeros((1, self.img_height, self.img_width)).long()
+
+        # fill the mask
+        if len(target['points']) > 0:
+            for point, label in zip(target['points'], target['labels']):
+                x, y = point[0], point[1]
+                point_buffer = _point_buffer(x, y, mask[0], self.radius)
+                mask[0, point_buffer] = label
+        
         if self.onehot:
-            mask = self._onehot(target)
-
-        else:
-            mask = torch.zeros((1, self.img_height, self.img_width)).long()
-
-            # fill the mask
-            if len(target['points']) > 0:
-                for point, label in zip(target['points'], target['labels']):
-                    x, y = point[0], point[1]
-                    point_buffer = _point_buffer(x, y, mask[0], self.radius)
-                    mask[0, point_buffer] = label
-            
-            if self.squeeze:
-                mask = mask.squeeze(0)
+            mask = self._onehot(mask)
+        
+        if self.squeeze:
+            mask = mask.squeeze(0)
+        
+        if self.target_type == 'float':
+            mask = mask.float()
             
         return image, mask
     
-    def _onehot(self, target: torch.Tensor):
-        
-        masks = torch.zeros((self.num_classes, self.img_height, self.img_width)).long()
-
-        if len(target['points']) > 0:
-
-            for point, label in zip(target['points'], target['labels']):
-                x, y = point[0], point[1]
-                point_buffer = _point_buffer(x, y, masks[label-1], self.radius)
-                masks[label-1, point_buffer] = 1
-            
-            return masks
+    def _onehot(self, mask: torch.Tensor):
+        onehot_mask = torch.nn.functional.one_hot(mask, self.num_classes+1)
+        onehot_mask = torch.movedim(onehot_mask, -1, -3)
+        return onehot_mask
 
 @TRANSFORMS.register()
 class FIDT:

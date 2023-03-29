@@ -240,7 +240,7 @@ You can also create your own config file. Save it first into the [`configs/train
 ```console
 python tools/train.py train=<your config name>
 ```
-Click [here](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/TRAINING_CONFIG.md) to see the description of the **training config file**.
+Click [here](https://github.com/Alexandre-Delplanque/HerdNet/tree/main/doc/configs_train.md) to see how to write a **training config file**.
 
 You can also make multiple different configurations runs or modify some parameters directly from the command line (see the [doc](https://hydra.cc/docs/intro)).
 
@@ -254,7 +254,7 @@ You can also create your own config file. Save it first into the [`configs/test`
 ```console
 python tools/test.py test=<your config name>
 ```
-Click [here](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/TESTING_CONFIG.md) to see the description of the **testing config file**.
+Click [here](https://github.com/Alexandre-Delplanque/HerdNet/tree/main/doc/configs_test.md) to see how to write a **testing config file**.
 
 ### Visualizing Ground Truth (and Detections)
 You can view your ground truth and your model's detections by using the `view.py` tool. This tool uses [FiftyOne](https://voxel51.com/fiftyone/). You simply need to specify a root directory that contains your images (`root`), your CSV file containing the ground truth (`gt`) and optionaly a CSV file containing model's detections (`-dets`). See dataset format below for your CSV files format.
@@ -287,3 +287,6 @@ torch.save(pth_file, 'path/to/the/file.pth')
 ## Colab Demo
 Here is a [Google Colab demo](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb) based on the UAV nadir dataset used in the paper:
 > *Delplanque, A., Foucher, S., Lejeune, P., Linchant, J. and Théau, J. (2022), Multispecies detection and identification of African mammals in aerial imagery using convolutional neural networks. Remote Sens Ecol Conserv, 8: 166-179. https://doi.org/10.1002/rse2.234*.
+
+## Code Versioning
+The code used in the paper is the one corresponding to the tag [`v0.1.0`](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.1.0). The 'main' branch contains the latest stable version with fixed bugs and new features, it is recommended to use this branch for your development. The file [CHANGELOG.md](https://github.com/Alexandre-Delplanque/HerdNet/tree/main/CHANGELOG.md) contains the details of the commits for each version of the code.

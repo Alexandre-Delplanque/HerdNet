@@ -1,5 +1,6 @@
 wandb_project: 'Sample project'
 wandb_entity: 'youraccountname'
+wandb_run: 'myrun'
 device_name: 'cuda'
 
 model: 
@@ -17,6 +18,11 @@ dataset:
   anno_type: 'point'
   num_classes: 4
   collate_fn: null
+
+  class_def:
+    1: 'camel'
+    2: 'donkey'
+    3: 'sheep/goat'
 
   name: 'CSVDataset'
   csv_file: '/path/to/your/file.csv'

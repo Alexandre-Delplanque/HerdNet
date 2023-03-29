@@ -8,11 +8,11 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 29, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import torch
@@ -59,6 +59,8 @@ class Trainer:
         work_dir: Optional[str] = None, 
         device_name: str = 'cuda', 
         print_freq: int = 50,
+        valid_freq: int = 1,
+        csv_logger: bool = False
         ) -> None:
         '''
         Args:
@@ -93,7 +95,7 @@ class Trainer:
                 model validation that combines a dataset and a sampler, and provides an iterable 
                 over the given dataset. 
                 Defaults to None.
-            evaluator (Evaluator, optional): if specified, used for evaluation after each epoch.
+            evaluator (Evaluator, optional): if specified, used for evaluation.
                 Override the default evaluator.
                 Defaults to None.
             vizual_fn (callable, optional): a model specific function that will be use for plotting
@@ -107,6 +109,12 @@ class Trainer:
             print_freq (int, optional): define the frequency at which the logs will be
                 printed and/or recorded. 
                 Defaults to 50.
+            valid_freq (int, optional): define the frequency at which the model will be validated.
+                Note that first and last epoch are always validated.
+                Defaults to 1 (i.e., after each epoch).
+            csv_logger (bool, optional): set to True to store logs in a CSV file. Warning, long
+                training session might slow down the process.
+                Defaults to False.
         '''
 
         assert isinstance(model, torch.nn.Module), \
@@ -138,6 +146,9 @@ class Trainer:
         assert callable(vizual_fn) or isinstance(vizual_fn, type(None)), \
             f'vizual_fn argument must be a callable function, got \'{type(vizual_fn)}\''
         
+        assert valid_freq <= num_epochs, \
+            'validation frequency must be lower or equal to the number of epochs'
+        
         self.device = torch.device(device_name)
 
         self.model = model.to(self.device)
@@ -147,6 +158,7 @@ class Trainer:
         self.epochs = num_epochs
         
         self.print_freq = print_freq
+        self.valid_freq = valid_freq
         self.lr_milestones = lr_milestones
         self.evaluator = evaluator
 
@@ -179,8 +191,9 @@ class Trainer:
             self.work_dir = os.getcwd()
 
         # loggers
-        self.train_logger = CustomLogger(delimiter=' ', filename='training', work_dir=self.work_dir)
-        self.val_logger = CustomLogger(delimiter=' ', filename='validation', work_dir=self.work_dir)
+        self.csv_logger = csv_logger
+        self.train_logger = CustomLogger(delimiter=' ', filename='training', work_dir=self.work_dir, csv=self.csv_logger)
+        self.val_logger = CustomLogger(delimiter=' ', filename='validation', work_dir=self.work_dir, csv=self.csv_logger)
     
     def prepare_data(self, images, targets) -> tuple:
         ''' Method to prepare the data before feeding to the model. 
@@ -263,29 +276,31 @@ class Trainer:
                 wandb.log({'lr': self.optimizer.param_groups[0]["lr"]})
 
             # validation
-            if self.evaluator is not None:
-                val_flag = True
-                viz = False
-                if wandb_flag: viz = True
-                self._prepare_evaluator('validation', epoch)
-                val_output = self.evaluator.evaluate(returns=validate_on, viz=viz)
-                print(f'{self.evaluator.header} {validate_on}: {val_output:.4f}')
+            if epoch % self.valid_freq == 0 or epoch in [1, self.epochs]:
 
-                if wandb_flag:
-                    wandb.log({validate_on: val_output, 'epoch': epoch})
+                if self.evaluator is not None:
+                    val_flag = True
+                    viz = False
+                    if wandb_flag: viz = True
+                    self._prepare_evaluator('validation', epoch)
+                    val_output = self.evaluator.evaluate(returns=validate_on, viz=viz)
+                    print(f'{self.evaluator.header} {validate_on}: {val_output:.4f}')
 
-            elif self.val_dataloader is not None:
-                val_flag = True
-                val_output = self.evaluate(epoch, wandb_flag=wandb_flag)
-                if wandb_flag:
-                    wandb.log({'val_loss': val_output, 'epoch': epoch})
+                    if wandb_flag:
+                        wandb.log({validate_on: val_output, 'epoch': epoch})
+
+                elif self.val_dataloader is not None:
+                    val_flag = True
+                    val_output = self.evaluate(epoch, wandb_flag=wandb_flag)
+                    if wandb_flag:
+                        wandb.log({'val_loss': val_output, 'epoch': epoch})
             
-            # save checkpoint(s)
-            if val_flag and checkpoints =='best' and self._is_best(val_output, mode = select):
-                print('Best model saved - Epoch {} - Validation value: {:.6f}'.format(epoch, val_output))
-                self._save_checkpoint(epoch, checkpoints)
-            elif checkpoints == 'all':
-                self._save_checkpoint(epoch, checkpoints)
+                # save checkpoint(s)
+                if val_flag and checkpoints =='best' and self._is_best(val_output, mode = select):
+                    print('Best model saved - Epoch {} - Validation value: {:.6f}'.format(epoch, val_output))
+                    self._save_checkpoint(epoch, checkpoints)
+                elif checkpoints == 'all':
+                    self._save_checkpoint(epoch, checkpoints)
             
             self._save_checkpoint(epoch, 'latest')
 
@@ -378,29 +393,31 @@ class Trainer:
                 wandb.log({'lr': self.optimizer.param_groups[0]["lr"]})
 
             # validation
-            if self.evaluator is not None:
-                val_flag = True
-                viz = False
-                if wandb_flag: viz = True
-                self._prepare_evaluator('validation', epoch)
-                val_output = self.evaluator.evaluate(returns=validate_on, viz=viz)
-                print(f'{self.evaluator.header} {validate_on}: {val_output:.4f}')
+            if epoch % self.valid_freq == 0 or epoch in [1, self.epochs]:
 
-                if wandb_flag:
-                    wandb.log({validate_on: val_output, 'epoch': epoch})
+                if self.evaluator is not None:
+                    val_flag = True
+                    viz = False
+                    if wandb_flag: viz = True
+                    self._prepare_evaluator('validation', epoch)
+                    val_output = self.evaluator.evaluate(returns=validate_on, viz=viz)
+                    print(f'{self.evaluator.header} {validate_on}: {val_output:.4f}')
 
-            elif self.val_dataloader is not None:
-                val_flag = True
-                val_output = self.evaluate(epoch, wandb_flag=wandb_flag)
-                if wandb_flag:
-                    wandb.log({'val_loss': val_output, 'epoch': epoch})
-            
-            # save checkpoint(s)
-            if val_flag and checkpoints =='best' and self._is_best(val_output, mode = select):
-                print('Best model saved - Epoch {} - Validation value: {:.6f}'.format(epoch, val_output))
-                self._save_checkpoint(epoch, checkpoints)
-            elif checkpoints == 'all':
-                self._save_checkpoint(epoch, checkpoints)
+                    if wandb_flag:
+                        wandb.log({validate_on: val_output, 'epoch': epoch})
+
+                elif self.val_dataloader is not None:
+                    val_flag = True
+                    val_output = self.evaluate(epoch, wandb_flag=wandb_flag)
+                    if wandb_flag:
+                        wandb.log({'val_loss': val_output, 'epoch': epoch})
+                
+                # save checkpoint(s)
+                if val_flag and checkpoints =='best' and self._is_best(val_output, mode = select):
+                    print('Best model saved - Epoch {} - Validation value: {:.6f}'.format(epoch, val_output))
+                    self._save_checkpoint(epoch, checkpoints)
+                elif checkpoints == 'all':
+                    self._save_checkpoint(epoch, checkpoints)
             
             self._save_checkpoint(epoch, 'latest')
 

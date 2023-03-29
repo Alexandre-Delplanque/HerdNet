@@ -8,11 +8,11 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 29, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import torch
@@ -63,6 +63,7 @@ class HerdNet(nn.Module):
 
         self.down_ratio = down_ratio
         self.num_classes = num_classes
+        self.head_conv = head_conv
 
         self.first_level = int(np.log2(down_ratio))
 
@@ -127,3 +128,29 @@ class HerdNet(nn.Module):
         # clsmap = self.cls_head(decode_cls)
 
         return heatmap, clsmap
+    
+    def freeze(self, layers: list) -> None:
+        ''' Freeze all layers mentioned in the input list '''
+        for layer in layers:
+            self._freeze_layer(layer)
+    
+    def _freeze_layer(self, layer_name: str) -> None:
+        for param in getattr(self, layer_name).parameters():
+            param.requires_grad = False
+    
+    def reshape_classes(self, num_classes: int) -> None:
+        ''' Reshape architecture according to a new number of classes.
+
+        Arg:
+            num_classes (int): new number of classes
+        '''
+        
+        self.cls_head[-1] = nn.Conv2d(
+                self.head_conv, num_classes, 
+                kernel_size=1, stride=1, 
+                padding=0, bias=True
+                )
+
+        self.cls_head[-1].bias.data.fill_(0.00)
+
+        self.num_classes = num_classes

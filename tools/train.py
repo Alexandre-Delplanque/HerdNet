@@ -8,11 +8,11 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 29, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import torch
@@ -25,18 +25,20 @@ import torchvision
 
 import albumentations as A
 
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import Sampler, WeightedRandomSampler
-from sklearn.model_selection import StratifiedGroupKFold
+from torch.utils.data import DataLoader, Dataset
 from omegaconf import DictConfig
 from typing import Callable, Optional
 
-from animaloc.data.utils import group_by_image, weighted_samples
 from animaloc.models.utils import LossWrapper, load_model
 from animaloc.eval import Evaluator, PointsMetrics, Stitcher, BoxesMetrics, ImageLevelMetrics
 
 from animaloc.utils.seed import set_seed
-from animaloc.utils.useful_funcs import mkdir
+from animaloc.utils.useful_funcs import current_date
+
+def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
+    assert 'species' in df.columns
+    cls_dict = dict(map(reversed, cls_dict.items()))
+    df['labels'] = df['species'].map(cls_dict)
 
 def _load_albu_transforms(tr_cfg: dict) -> list:
     transforms = []
@@ -66,13 +68,21 @@ def _load_end_transforms(tr_cfg: DictConfig) -> Optional[list]:
     else:
         return None
 
-def _build_sampler(df: pandas.DataFrame, col: str) -> Sampler:
-    data = group_by_image(df)
-    target_var = torch.tensor(data[col].values)
-    samples = weighted_samples(target_var, [0.0, 1.0])
-    sampler = WeightedRandomSampler(samples, len(samples), replacement=False)
+def _build_sampler(sampler_cfg: DictConfig, dl_kwargs: dict, dataset: Dataset) -> dict:
+    dl_kwargs = dl_kwargs.copy()
+    
+    sampler = animaloc.data.samplers.__dict__[sampler_cfg.name]
+    if sampler_cfg.data_source == 'dataset':
+        sampler = sampler(dataset, **dict(sampler_cfg.kwargs))
+    else:
+        raise NotImplementedError
 
-    return sampler
+    if sampler_cfg.batch:
+        dl_kwargs.update(dict(batch_size=1, shuffle=False, batch_sampler=sampler))
+    else:
+        dl_kwargs.update(dict(shuffle=False, sampler=sampler))
+
+    return dl_kwargs
 
 def _get_collate_fn(cfg: DictConfig) -> Callable:
     fn = cfg.datasets.collate_fn
@@ -224,196 +234,172 @@ def main(cfg: DictConfig) -> None:
 
     train_args = cfg.datasets.train
     val_args = cfg.datasets.validate
-    dataloaders = []
-    cv_flag = False
-    if 'cv_settings' in cfg.datasets.keys():
-        cv_flag = True
-        cv_args = cfg.datasets.cv_settings
 
-        df = pandas.read_csv(cv_args.csv_file)
+    train_df = pandas.read_csv(train_args.csv_file)
+    _set_species_labels(dict(cfg.datasets.class_def), train_df)
 
-        group_col = cv_args.group_column
-        assert group_col in df.columns, \
-            f'\'{group_col}\' does not appear in the ' \
-            'column names of the csv file'
+    train_dataset = animaloc.datasets.__dict__[train_args.name](
+        csv_file = train_df,
+        root_dir = train_args.root_dir,
+        albu_transforms = _load_albu_transforms(train_args.albu_transforms),
+        end_transforms = _load_end_transforms(train_args.end_transforms)
+        )
+    
+    train_dl_kwargs = dict(
+        batch_size=cfg.training_settings.batch_size,
+        shuffle=True,
+        collate_fn=_get_collate_fn(cfg)
+        )
+    
+    if train_args.sampler is not None:
+        train_dl_kwargs = _build_sampler(train_args.sampler, dl_kwargs=train_dl_kwargs, 
+            dataset=train_dataset)
 
-        kfold = StratifiedGroupKFold(n_splits=cv_args.k)
+    train_dataloader = DataLoader(train_dataset, **train_dl_kwargs)
+    
+    val_dataloader = None
+    if val_args is not None:
+
+        val_df = pandas.read_csv(val_args.csv_file)
+        _set_species_labels(dict(cfg.datasets.class_def), val_df)
         
-        for k, (train_idx, val_idx) in enumerate(kfold.split(df, y=df['labels'], groups=df[group_col])):
-
-            train_dataset = animaloc.datasets.__dict__[train_args.name](
-                csv_file = df.iloc[train_idx],
-                root_dir = cv_args.root_dir,
-                albu_transforms = _load_albu_transforms(train_args.albu_transforms),
-                end_transforms = _load_end_transforms(train_args.end_transforms)
-                )
-            
-            val_dataset = animaloc.datasets.__dict__[val_args.name](
-                csv_file = df.iloc[val_idx],
-                root_dir = cv_args.root_dir,
-                albu_transforms = _load_albu_transforms(val_args.albu_transforms),
-                end_transforms = _load_end_transforms(val_args.end_transforms)
-                )
-
-            sampler = None
-            train_shuffle = True
-            if train_args.sample_on is not None:
-                sampler = _build_sampler(df=train_dataset.data, col=train_args.sample_on)
-                train_shuffle = False
-            
-            train_dataloader = DataLoader(train_dataset, 
-                batch_size=cfg.training_settings.batch_size, shuffle=train_shuffle, sampler=sampler,
-                collate_fn=_get_collate_fn(cfg))
-            
-            val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg))
-
-            dataloaders.append((train_dataloader, val_dataloader))
-        
-        if cv_args.one_fold:
-            dataloaders = [dataloaders[0]]
-
-    else:
-        train_dataset = animaloc.datasets.__dict__[train_args.name](
-            csv_file = train_args.csv_file,
-            root_dir = train_args.root_dir,
-            albu_transforms = _load_albu_transforms(train_args.albu_transforms),
-            end_transforms = _load_end_transforms(train_args.end_transforms)
-            )
-
         val_dataset = animaloc.datasets.__dict__[val_args.name](
-            csv_file = val_args.csv_file,
+            csv_file = val_df,
             root_dir = val_args.root_dir,
             albu_transforms = _load_albu_transforms(val_args.albu_transforms),
             end_transforms = _load_end_transforms(val_args.end_transforms)
             )
         
-        sampler = None
-        train_shuffle = True
-        if train_args.sample_on is not None:
-            sampler = _build_sampler(df=train_dataset.data, col=train_args.sample_on)
-            train_shuffle = False
-
-        train_dataloader = DataLoader(train_dataset, 
-            batch_size=cfg.training_settings.batch_size, shuffle=train_shuffle, sampler=sampler,
-            collate_fn=_get_collate_fn(cfg))
-            
         val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg))
 
-        dataloaders.append((train_dataloader, val_dataloader))
+    work_dir = None
 
-    for k, (train_dataloader, val_dataloader) in enumerate(dataloaders):
+    # Set up wandb
+    print('Connecting to Weights & Biases ...')
+    settings = cfg.training_settings
+    losses = cfg.losses
+    if losses is not None:
+        losses = list(cfg.losses.keys())
 
-        work_dir = None
-        # Cross-validation?
-        if cv_flag:
-            work_dir = os.path.join(os.getcwd(), f'k{k+1}')
-            mkdir(work_dir)
-            train_df = train_dataloader.dataset.csv_file
-            val_df = val_dataloader.dataset.csv_file
-            train_df.to_csv(os.path.join(work_dir, f'train_k{k+1}.csv'), index=False)
-            val_df.to_csv(os.path.join(work_dir, f'val_k{k+1}.csv'), index=False)
-
-        # Set up wandb
-        print('Connecting to Weights & Biases ...')
-        settings = cfg.training_settings
-        losses = cfg.losses
-        if losses is not None:
-            losses = list(cfg.losses.keys())
-
-        wandb.init(
-            project = cfg.wandb_project,
-            entity = cfg.wandb_entity,
-            config = dict(
-                batch_size = settings.batch_size,
-                optimizer = settings.optimizer,
-                lr = settings.lr,
-                weight_decay = settings.weight_decay,
-                warmup_iters = settings.warmup_iters,
-                epochs = settings.epochs,
-                losses = losses,
-                seed = cfg.seed,
-                data_augmentation = list(cfg.datasets.train.albu_transforms.keys()),
-                kfold = k+1,
-                input_size = cfg.datasets.img_size,
-                **cfg.model.kwargs
-                )
+    wandb.init(
+        project = cfg.wandb_project,
+        entity = cfg.wandb_entity,
+        config = dict(
+            batch_size = settings.batch_size,
+            optimizer = settings.optimizer,
+            lr = settings.lr,
+            weight_decay = settings.weight_decay,
+            warmup_iters = settings.warmup_iters,
+            epochs = settings.epochs,
+            losses = losses,
+            seed = cfg.seed,
+            data_augmentation = list(cfg.datasets.train.albu_transforms.keys()),
+            input_size = cfg.datasets.img_size,
+            **cfg.model.kwargs
             )
-        
-        # Build the model
-        print('Building the model ...')
-        model = _build_model(cfg)
+        )
+    
+    date = current_date()
+    wandb.run.name = f'{date}_' + cfg.wandb_run + f'_RUN_{wandb.run.id}'
+    
+    # Build the model
+    print('Building the model ...')
+    model = _build_model(cfg)
 
-        # Prepare for training
-        print('Preparing for training ...')
-        criterions = _load_losses(cfg)
-        model = LossWrapper(model, criterions).to(device)
+    # Prepare for training
+    print('Preparing for training ...')
+    criterions = _load_losses(cfg)
+    model = LossWrapper(model, criterions).to(device)
 
-        if cfg.model.load_from is not None:
-            model = load_model(model, cfg.model.load_from)
-        
-        if cfg.training_settings.optimizer == 'adam':
-            optimizer = torch.optim.Adam(
-                model.parameters(), 
-                lr = cfg.training_settings.lr, 
-                weight_decay = cfg.training_settings.weight_decay
-                )
-        else:
-            optimizer = torch.optim.SGD(
-                model.parameters(), 
-                lr = cfg.training_settings.lr, 
-                weight_decay = cfg.training_settings.weight_decay
-                )
-        
-        # Evaluator ?
-        evaluator = None
-        validate_on = 'recall'
-        select = 'min'
-        if cfg.training_settings.evaluator is not None:
-            evaluator = _define_evaluator(model, val_dataloader, cfg)
-            select = cfg.training_settings.evaluator.select_mode
-            validate_on = cfg.training_settings.evaluator.validate_on
-        
-        # Start training & validation
-        auto_lr = cfg.training_settings.auto_lr
-        if auto_lr:
-            auto_lr = dict(cfg.training_settings.auto_lr)
+    if cfg.model.load_from is not None:
+        model = load_model(model, cfg.model.load_from)
 
-        vizual_fn = None
-        if cfg.training_settings.vizual_fn is not None:
-            vizual_fn = animaloc.vizual.plots.__dict__[cfg.training_settings.vizual_fn]
-
-        trainer = animaloc.train.trainers.__dict__[cfg.training_settings.trainer](
-            model, 
-            train_dataloader, 
-            optimizer = optimizer, 
-            num_epochs = cfg.training_settings.epochs, 
-            auto_lr = auto_lr,
-            # adaloss = cfg.training_settings.adaloss,
-            val_dataloader = val_dataloader, 
-            evaluator = evaluator,
-            device_name = cfg.device_name,
-            vizual_fn = vizual_fn,
-            work_dir = work_dir,
-            print_freq = cfg.training_settings.print_freq
+        if 'HerdNet' in cfg.model.name:
+            if cfg.model.freeze is not None:
+                model.model.freeze(layers=list(cfg.model.freeze))
+                print(f"Layers {list(cfg.model.freeze)} freezed")
+    
+    if cfg.training_settings.optimizer == 'adam':
+        optimizer = torch.optim.Adam(
+            model.parameters(), 
+            lr = cfg.training_settings.lr, 
+            weight_decay = cfg.training_settings.weight_decay
             )
-        
-        if cfg.model.resume_from is not None:
-            print(f'Resuming training from \'{cfg.model.resume_from}\' ...')
-            trainer.resume(
-                pth_path = cfg.model.resume_from, 
-                select = select,
-                validate_on = validate_on, 
-                load_optim = True,
-                wandb_flag = True
-                )
-        else:
-            print('Starting training ...')
-            trainer.start(
-                cfg.training_settings.warmup_iters, 
-                select = select,
-                validate_on = validate_on, 
-                wandb_flag = True
-                )
+    else:
+        optimizer = torch.optim.SGD(
+            model.parameters(), 
+            lr = cfg.training_settings.lr, 
+            weight_decay = cfg.training_settings.weight_decay
+            )
+    
+    # Watch the model's gradients during training
+    wandb.watch(model)
+    
+    # Evaluator ?
+    evaluator = None
+    validate_on = 'recall'
+    select = 'min'
+    if cfg.training_settings.evaluator is not None:
+
+        assert val_dataloader is not None, \
+            'A validation dataset must be defined to build an evaluator'
+
+        evaluator = _define_evaluator(model, val_dataloader, cfg)
+        select = cfg.training_settings.evaluator.select_mode
+        validate_on = cfg.training_settings.evaluator.validate_on
+    
+    # Start training & validation
+    auto_lr = cfg.training_settings.auto_lr
+    if auto_lr:
+        auto_lr = dict(cfg.training_settings.auto_lr)
+
+    vizual_fn = None
+    if cfg.training_settings.vizual_fn is not None:
+        vizual_fn = animaloc.vizual.plots.__dict__[cfg.training_settings.vizual_fn]
+
+    trainer = animaloc.train.trainers.__dict__[cfg.training_settings.trainer](
+        model, 
+        train_dataloader, 
+        optimizer = optimizer, 
+        num_epochs = cfg.training_settings.epochs, 
+        auto_lr = auto_lr,
+        # adaloss = cfg.training_settings.adaloss,
+        val_dataloader = val_dataloader, 
+        evaluator = evaluator,
+        device_name = cfg.device_name,
+        vizual_fn = vizual_fn,
+        work_dir = work_dir,
+        print_freq = cfg.training_settings.print_freq,
+        valid_freq = cfg.training_settings.valid_freq,
+        )
+    
+    if cfg.model.resume_from is not None:
+        print(f'Resuming training from \'{cfg.model.resume_from}\' ...')
+        trainer.resume(
+            pth_path = cfg.model.resume_from, 
+            select = select,
+            validate_on = validate_on, 
+            load_optim = True,
+            wandb_flag = True
+            )
+    else:
+        print('Starting training ...')
+        trainer.start(
+            cfg.training_settings.warmup_iters, 
+            select = select,
+            validate_on = validate_on, 
+            wandb_flag = True
+            )
+    
+    # Add information in .pth files
+    for pth_name in ['best_model.pth', 'latest_model.pth']:
+        path = os.path.join(os.curdir, pth_name)
+        pth_file = torch.load(path)
+        norm_trans = _load_albu_transforms(train_args.albu_transforms)[-1]
+        pth_file['classes'] = dict(cfg.datasets.class_def)
+        pth_file['mean'] =  list(norm_trans.mean)
+        pth_file['std'] = list(norm_trans.std)
+        torch.save(pth_file, path)
 
 if __name__ == '__main__':
     main()
