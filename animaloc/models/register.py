@@ -8,11 +8,11 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: November 23, 2022
+    Last modification: March 29, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 from ..utils.registry import Registry
