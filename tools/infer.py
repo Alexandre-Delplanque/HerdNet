@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 29, 2023
+    Last modification: April 28, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -60,6 +60,8 @@ parser.add_argument('-ts', type=int, default=256,
     help='thumbnail size. Defaults to 256.')
 parser.add_argument('-pf', type=int, default=10,
     help='print frequence. Defaults to 10.')
+parser.add_argument('-rot', type=int, default=0,
+    help='number of degrees to rotate the images (counter clockwise). Defaults to 0.')
 
 args = parser.parse_args()
 
@@ -86,10 +88,16 @@ def main():
             if i.endswith(('.JPG','.jpg','.JPEG','.jpeg'))]
     n = len(img_names)
     df = pandas.DataFrame(data={'images': img_names, 'x': [0]*n, 'y': [0]*n, 'labels': [1]*n})
+    
+    albu_transforms = []
+    if args.rot != 0:
+        albu_transforms.append(A.Rotate(limit=(args.rot,args.rot), p=1))
+    albu_transforms.append(A.Normalize(mean=img_mean, std=img_std))
+    
     dataset = CSVDataset(
         csv_file = df,
         root_dir = args.root,
-        albu_transforms = [A.Normalize(mean=img_mean, std=img_std)],
+        albu_transforms = albu_transforms,
         end_transforms = [DownSample(down_ratio = 2, anno_type = 'point')]
         )
     
@@ -147,6 +155,8 @@ def main():
     img_names = numpy.unique(detections['images'].values).tolist()
     for img_name in img_names:
         img = Image.open(os.path.join(args.root, img_name))
+        if args.rot != 0:
+            img = img.rotate(args.rot, expand=True)
         img_cpy = img.copy()
         pts = list(detections[detections['images']==img_name][['y','x']].to_records(index=False))
         pts = [(y, x) for y, x in pts]
