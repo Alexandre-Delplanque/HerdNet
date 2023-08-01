@@ -22,5 +22,6 @@ from .dla import *
 from .herdnet import *
 from .utils import *
 from .ss_dla import *
+from .dla_backbone import *
 
 __all__ = ['MODELS', *MODELS.registry_names]
