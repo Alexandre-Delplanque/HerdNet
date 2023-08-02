@@ -81,18 +81,19 @@ class DLAEncoder(nn.Module):
             kernel_size=1, stride=1, 
             padding=0, bias=True
         )
-
-        self.cls_head = nn.Linear(512*16*16, 1) # binary head
+        self.pooling= nn.AvgPool2d(kernel_size= 16, stride=1, padding=0)
+        self.cls_head = nn.Linear(512, 1) # binary head
         
     def forward(self, input: torch.Tensor):
 
         encode = self.base_0(input) # 1x512x16x16
         bottleneck = self.bottleneck_conv(encode[-1])
+        bottleneck = self.pooling(bottleneck)
         bottleneck= torch.reshape(bottleneck, (bottleneck.size()[0],-1)) # not sure if it is the right approach
         encode[-1] = bottleneck # 1x512x16x16
         cls = self.cls_head(encode[-1])
         
-        #cls = nn.functional.softmax(cls)
+        #cls = nn.functional.sigmoid(cls)
         return cls
     
     def freeze(self, layers: list) -> None:
