@@ -21,6 +21,7 @@ import os
 import numpy
 import wandb
 import matplotlib
+from itertools import chain
 
 matplotlib.use('Agg')
 
@@ -392,6 +393,27 @@ class DensityMapEvaluator(Evaluator):
         return dict(gt = gt, preds = preds, est_count = est_counts)
 
 @EVALUATORS.register()
+class DensityMapEvaluator(Evaluator):
+  
+    def prepare_data(self, images: Any, targets: Any) -> tuple:        
+        return images.to(self.device), targets
+
+    def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: torch.Tensor) -> dict:
+
+        gt_coords = [p[::-1] for p in targets['points'].squeeze(0).tolist()]
+        gt_labels = targets['labels'].squeeze(0).tolist()
+        
+        gt = dict(loc = gt_coords, labels = gt_labels)
+        preds = dict(loc = [], labels = [], scores = [])
+
+        _, idx = torch.max(output, dim=1)
+        masks = F.one_hot(idx, num_classes=output.shape[1]).permute(0,3,1,2)
+        output = (output * masks)
+        est_counts = output[0].sum(2).sum(1).tolist()
+        
+        return dict(gt = gt, preds = preds, est_count = est_counts)
+    
+@EVALUATORS.register()
 class FasterRCNNEvaluator(Evaluator):
 
     def prepare_data(self, images: List[torch.Tensor], targets: List[dict]) -> tuple:
@@ -422,3 +444,22 @@ class FasterRCNNEvaluator(Evaluator):
         counts = [preds['labels'].count(i+1) for i in range(num_classes)]
 
         return dict(gt = gt, preds = preds, est_count = counts)
+    
+@EVALUATORS.register()
+class TileEvaluator(Evaluator):
+  
+    def prepare_data(self, images: Any, targets: Any) -> tuple:        
+        return images.to(self.device), targets
+
+    def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: torch.Tensor) -> dict:
+
+       
+        gt_labels = list(chain.from_iterable(targets[0].tolist()))
+        gt_labels = [int(l+1) for l in gt_labels]
+        gt = dict(loc = [], labels = gt_labels)
+        preds = dict(loc = [], labels = [], scores = [])
+
+        scores= list(chain.from_iterable(output.tolist()))
+        labels= [2 if s>0 else 1 for s in scores]
+        preds = dict(loc = [], labels = labels, scores = scores)
+        return dict(gt = gt_labels, preds = labels)

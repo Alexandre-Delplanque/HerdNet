@@ -637,11 +637,44 @@ class ImageLevelMetrics(Metrics):
         num_classes = num_classes + 1 # for convenience
         super().__init__(0, num_classes)
     
-    def feed(self, gt: int, pred: int) -> tuple:
+    def feed(self, gt: int, preds: int) -> tuple:
         '''
         Args:
             gt (int): numeric ground truth label
             pred (int): numeric predicted label
+        '''
+
+        gt = dict(labels=[gt], loc=[(0,0)])
+        preds = dict(labels=[preds], loc=[(0,0)])
+        
+        super().feed(gt, preds)
+    
+    def matching(self, gt: dict, pred: dict) -> None:
+        gt_lab = gt['labels'][0]
+        p_lab = pred['labels'][0]
+        for g, p in zip(gt_lab, p_lab): #TODO: Tobe confirmed
+            if g == p:
+                self.tp[g-1] += 1
+            else:
+                self.fp[p-1] += 1
+                self.fn[g-1] += 1
+        #TODO: does not seem to work anymore
+        #self._confusion_matrix += confusion_matrix(
+        #    [gt_lab], [p_lab], labels=list(range(self.num_classes-1)))
+        
+@METRICS.register()
+class RegressionMetrics(Metrics):
+    ''' Metrics class for regression type tasks '''
+
+    def __init__(self, num_classes: int = 2) -> None:
+        num_classes = num_classes + 1 # for convenience
+        super().__init__(0, num_classes)
+    
+    def feed(self, gt: float, pred: float) -> tuple:
+        '''
+        Args:
+            gt (float): numeric ground truth value
+            pred (float): numeric predicted value
         '''
 
         gt = dict(labels=[gt], loc=[(0,0)])
@@ -653,11 +686,4 @@ class ImageLevelMetrics(Metrics):
         gt_lab = gt['labels'][0]
         p_lab = pred['labels'][0]
 
-        if gt_lab == p_lab:
-            self.tp[gt_lab-1] += 1
-        else:
-            self.fp[p_lab-1] += 1
-            self.fn[gt_lab-1] += 1
-        
-        self._confusion_matrix += confusion_matrix(
-            [gt_lab], [p_lab], labels=list(range(self.num_classes-1)))
+        diff= math.abs(gt_lab-p_lab) # L1-loss
