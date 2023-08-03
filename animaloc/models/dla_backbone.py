@@ -52,9 +52,6 @@ class DLAEncoder(nn.Module):
         base_name = 'dla{}'.format(num_layers)
 
         self.num_classes = num_classes
-        self.head_conv = head_conv
-
-        self.first_level = int(np.log2(down_ratio))
 
         # backbone
         base = dla_modules.__dict__[base_name](pretrained=pretrained, return_levels=True)
