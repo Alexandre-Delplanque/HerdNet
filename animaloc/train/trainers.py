@@ -283,7 +283,7 @@ class Trainer:
                     viz = False
                     if wandb_flag: viz = True
                     self._prepare_evaluator('validation', epoch)
-                    val_output = self.evaluator.evaluate(returns=validate_on, wandb_flag=wandb_flag, viz=viz)
+                    val_output = self.evaluator.evaluate(returns=validate_on, viz=viz)
                     print(f'{self.evaluator.header} {validate_on}: {val_output:.4f}')
 
                     if wandb_flag:
