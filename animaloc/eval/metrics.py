@@ -652,15 +652,14 @@ class ImageLevelMetrics(Metrics):
     def matching(self, gt: dict, pred: dict) -> None:
         gt_lab = gt['labels'][0]
         p_lab = pred['labels'][0]
-        for g, p in zip(gt_lab, p_lab): #TODO: Tobe confirmed
+        for g, p in zip(gt_lab, p_lab): #TODO: To be confirmed
             if g == p:
                 self.tp[g-1] += 1
             else:
                 self.fp[p-1] += 1
                 self.fn[g-1] += 1
         #TODO: does not seem to work anymore
-        #self._confusion_matrix += confusion_matrix(
-        #    [gt_lab], [p_lab], labels=list(range(self.num_classes-1)))
+        self._confusion_matrix += confusion_matrix(gt_lab, p_lab, labels=list(range(1, self.num_classes)))
         
 @METRICS.register()
 class RegressionMetrics(Metrics):
