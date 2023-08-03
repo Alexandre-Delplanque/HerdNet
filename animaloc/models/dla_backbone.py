@@ -30,15 +30,13 @@ from . import dla as dla_modules
 
 @MODELS.register()
 class DLAEncoder(nn.Module):
-    ''' HerdNet architecture '''
+    ''' DLA encoder architecture '''
 
     def __init__(
         self,
         num_layers: int = 34,
         num_classes: int = 2,
         pretrained: bool = True, 
-        down_ratio: Optional[int] = 2, 
-        head_conv: int = 64
         ):
         '''
         Args:
@@ -47,21 +45,12 @@ class DLAEncoder(nn.Module):
                 Defaults to 2.
             pretrained (bool, optional): set False to disable pretrained DLA encoder parameters
                 from ImageNet. Defaults to True.
-            down_ratio (int, optional): downsample ratio. Possible values are 1, 2, 4, 8, or 16. 
-                Set to 1 to get output of the same size as input (i.e. no downsample).
-                Defaults to 2.
-            head_conv (int, optional): number of supplementary convolutional layers at the end 
-                of decoder. Defaults to 64.
         '''
 
         super(DLAEncoder, self).__init__()
-
-        assert down_ratio in [1, 2, 4, 8, 16], \
-            f'Downsample ratio possible values are 1, 2, 4, 8 or 16, got {down_ratio}'
         
         base_name = 'dla{}'.format(num_layers)
 
-        self.down_ratio = down_ratio
         self.num_classes = num_classes
         self.head_conv = head_conv
 
@@ -81,16 +70,16 @@ class DLAEncoder(nn.Module):
             kernel_size=1, stride=1, 
             padding=0, bias=True
         )
-        self.pooling= nn.AvgPool2d(kernel_size= 16, stride=1, padding=0)
+        self.pooling= nn.AvgPool2d(kernel_size= 16, stride=1, padding=0) # we take the average of each filter
         self.cls_head = nn.Linear(512, 1) # binary head
         
     def forward(self, input: torch.Tensor):
 
-        encode = self.base_0(input) # 1x512x16x16
+        encode = self.base_0(input) # Nx512x16x16
         bottleneck = self.bottleneck_conv(encode[-1])
         bottleneck = self.pooling(bottleneck)
-        bottleneck= torch.reshape(bottleneck, (bottleneck.size()[0],-1)) # not sure if it is the right approach
-        encode[-1] = bottleneck # 1x512x16x16
+        bottleneck= torch.reshape(bottleneck, (bottleneck.size()[0],-1)) # keeping the first dimension (samples)
+        encode[-1] = bottleneck # Nx512
         cls = self.cls_head(encode[-1])
         
         #cls = nn.functional.sigmoid(cls)
@@ -105,19 +94,3 @@ class DLAEncoder(nn.Module):
         for param in getattr(self, layer_name).parameters():
             param.requires_grad = False
     
-    def reshape_classes(self, num_classes: int) -> None:
-        ''' Reshape architecture according to a new number of classes.
-
-        Arg:
-            num_classes (int): new number of classes
-        '''
-        
-        self.cls_head[-1] = nn.Conv2d(
-                self.head_conv, num_classes, 
-                kernel_size=1, stride=1, 
-                padding=0, bias=True
-                )
-
-        self.cls_head[-1].bias.data.fill_(0.00)
-
-        self.num_classes = num_classes

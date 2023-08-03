@@ -658,7 +658,7 @@ class ImageLevelMetrics(Metrics):
             else:
                 self.fp[p-1] += 1
                 self.fn[g-1] += 1
-        #TODO: does not seem to work anymore
+        
         self._confusion_matrix += confusion_matrix(gt_lab, p_lab, labels=list(range(1, self.num_classes)))
         
 @METRICS.register()
