@@ -34,7 +34,7 @@ Models were trained separatly for each of the two datasets. These pre-trained mo
 | Model   | Params | Dataset                                                      | Environment | Species                                          | F1score | MAE¹ | RMSE² |  AC³  |                                           Download                                           |
 | ------- |:------:| ------------------------------------------------------------ | ---- | ------------------------------------------------ |:-------:|:----:|:-----:|:-----:|:--------------------------------------------------------------------------------------------:|
 | HerdNet |  18M   | Ennedi 2019                                                  | Desert, xeric shrubland and grassland | Camel, donkey, sheep and goat                    |  73.6%  | 6.1  |  9.8  | 15.8% | [PTH file](https://drive.google.com/uc?export=download&id=1CetqTS3VSilMI98Fx_u-yeNr7zBZYh94) |
-| HerdNet |  18M   | [Delplanque et al. (2022)](https://doi.org/10.1002/rse2.234) | Tropical forest, savanna, tropical shrubland and grassland | Buffalo, elephant, kob, topi, warthog, waterbuck |  83.5%  | 1.9  |  3.6  | 7.8%  | [PTH file](https://drive.google.com/uc?export=download&id=1-WUnBC4BJMVkNvRqalF_HzA1_pRkQTI_) |
+| HerdNet |  18M   | [Delplanque et al. (2022)](https://doi.org/10.58119/ULG/MIRUU5) | Tropical forest, savanna, tropical shrubland and grassland | Buffalo, elephant, kob, topi, warthog, waterbuck |  83.5%  | 1.9  |  3.6  | 7.8%  | [PTH file](https://drive.google.com/uc?export=download&id=1-WUnBC4BJMVkNvRqalF_HzA1_pRkQTI_) |
 
 ¹MAE, Mean Absolute Error; ²RMSE, Root Mean Square Error; ³AC, Average Confusion between species.
 
@@ -285,7 +285,7 @@ torch.save(pth_file, 'path/to/the/file.pth')
 ```
 
 ## Colab Demo
-Here is a [Google Colab demo](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb) based on the UAV nadir dataset used in the paper:
+Here is a [Google Colab demo](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb) based on the [UAV nadir dataset](https://doi.org/10.58119/ULG/MIRUU5) used in the paper:
 > *Delplanque, A., Foucher, S., Lejeune, P., Linchant, J. and Théau, J. (2022), Multispecies detection and identification of African mammals in aerial imagery using convolutional neural networks. Remote Sens Ecol Conserv, 8: 166-179. https://doi.org/10.1002/rse2.234*.
 
 ## Code Versioning
