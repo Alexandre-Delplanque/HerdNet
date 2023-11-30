@@ -8,7 +8,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: April 28, 2023
+    Last modification: November 30, 2023
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "CC BY-NC-SA 4.0"
@@ -425,7 +425,10 @@ class Trainer:
             # scheduler
             if lr_scheduler is not None:
                 if self.auto_lr_flag:
-                    lr_scheduler.step(val_output)
+                    if 'val_output' in locals():
+                        lr_scheduler.step(val_output)
+                    else:
+                        lr_scheduler.step(self.best_val)
                 else:
                     lr_scheduler.step()
             
