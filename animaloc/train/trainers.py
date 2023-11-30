@@ -524,7 +524,7 @@ class Trainer:
                 wandb.log(loss_dict)
 
             self.losses = sum(loss for loss in loss_dict.values())
-            batches_losses.append(self.losses)
+            batches_losses.append(self.losses.detach())
 
             loss_dict_reduced = reduce_dict(loss_dict)
             losses_reduced = sum(loss for loss in loss_dict_reduced.values())
