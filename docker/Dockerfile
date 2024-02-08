@@ -1,29 +1,23 @@
-FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime AS base
+
+ARG PYTORCH="1.11.0"
+ARG CUDA="11.3"
+ARG CUDNN="8"
+
+FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel AS base
+ENV TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0+PTX 9.0"
+ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
+
 RUN conda update conda && conda install pip && conda clean -afy
 WORKDIR /herdnet
 COPY environment-dev.yml ./
 RUN conda env update -f environment-dev.yml -n base && conda clean -afy
-
-
-#FROM base as dep_builder
-## Some deps must be built (e.g. against the conda GDAL)
-#RUN apt-get update \
-#    && apt-get install -y gcc build-essential \
-#    && rm -rf /var/lib/apt/lists/*
-#COPY pyproject.toml setup.cfg ./
-#COPY src/stactools/core/__init__.py src/stactools/core/
-## Install dependencies but remove the actual package
-#RUN pip install --prefix=/install .[all] \
-#    && rm -r /install/lib/*/site-packages/stactools*
-
 
 FROM base AS dev
 # Install make for the docs build
 RUN apt-get update \
     && apt-get install -y gcc make build-essential git \
     && rm -rf /var/lib/apt/lists/*
-#COPY --from=dep_builder /install /opt/conda
-#RUN conda install -c conda-forge pandoc && conda clean -af
+
 COPY requirements-dev.txt ./
 RUN pip install -r requirements-dev.txt
 COPY . ./
@@ -31,9 +25,3 @@ COPY . ./
 RUN git init
 RUN pip install -e .
 
-
-#FROM base AS main
-#COPY --from=dep_builder /install /opt/conda
-#COPY src ./src
-#COPY pyproject.toml setup.cfg ./
-#RUN pip install .[all]
