@@ -6,11 +6,13 @@ dist/
 build/
 images/
 outputs/
+output/
+DATASETS/
 multirun/
 exp/
 handling/
 tests/
-scripts/
+wandb/
 *.code-workspace
 
 configs/train/*

@@ -12,3 +12,4 @@ pandas
 #opencv-python-headless
 hydra-core
 wandb
+gdown

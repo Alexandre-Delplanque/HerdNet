@@ -17,6 +17,8 @@ Run a console in a docker container with all prerequisites installed.
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     docker run --rm -it --gpus all\
+        -v /home/fous3401/DATASETS:/herdnet/DATASETS \
+        --ipc=host \
         -v `pwd`:/herdnet \
         -p 8000:8000 \
         --entrypoint /bin/bash \
