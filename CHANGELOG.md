@@ -1,3 +1,16 @@
+# [v0.2.1](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.1) (March 19, 2024)
+Code license changed to [`MIT License`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md).
+
+## Minor Fixes
+- Change UAV dataset hosting (now in [ULiège Open Data Repository](https://dataverse.uliege.be/dataset.xhtml?persistentId=doi:10.58119/ULG/MIRUU5))
+
+## Commits
+Alexandre-Delplanque (3):
+- [d2b9078](https://github.com/Alexandre-Delplanque/HerdNet/commit/d2b90785fafba495d7a0831efb823cfd4004c69d) - chore: final licence changes
+- [f063a82](https://github.com/Alexandre-Delplanque/HerdNet/commit/f063a82ff4dedf0b1d748a78eb11dfde99b1cfac) - chore: switch to MIT License
+- [d86ec37](https://github.com/Alexandre-Delplanque/HerdNet/commit/d86ec3736efaabbea6c1d07549e2a605a5c928ae) - fix: new link for UAV dataset #2
+
+
 # [v0.2.0](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.0) (March 29, 2023)
 ## New features
 ### Classes and functions
