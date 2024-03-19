@@ -9,6 +9,8 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 setup(
     name='animaloc',
     version='0.2.0',
+    license='MIT License',
+    license_files = ('LICENSE.md'),
     description='Animal localization in aerial imagery using Pytorch',
     long_description=long_description,
 

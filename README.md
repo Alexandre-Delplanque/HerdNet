@@ -1,5 +1,5 @@
 # HerdNet 
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Alexandre-Delplanque/HerdNet/blob/main/notebooks/demo-training-testing-herdnet.ipynb)
 
 Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count African Mammals using Aerial Imagery and Deep Learning?](https://doi.org/10.1016/j.isprsjprs.2023.01.025)"
 
@@ -10,7 +10,7 @@ Code for paper "[From Crowd to Herd Counting: How to Precisely Detect and Count 
 ![](https://i.imgur.com/MCZWn8Z.jpg)
 
 ## License
-HerdNet follows [`CC BY-NC-SA-4.0`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md) license and is thus open source and freely available for academic research purposes only, no commercial use is permitted.
+HerdNet is available under the [`MIT License`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md) and is thus open source and freely available. For a complete list of package dependencies with copyright and license info, please look at the file [`packages.txt`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/packages.txt)
 
 ## Citation
 If you use this code in your work, please cite our [paper](https://doi.org/10.1016/j.isprsjprs.2023.01.025):
@@ -29,7 +29,7 @@ If you use this code in your work, please cite our [paper](https://doi.org/10.10
 ```
 
 ## Pretrained Models
-Models were trained separatly for each of the two datasets. These pre-trained models follows the same license ([`CC BY-NC-SA-4.0`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md)) as the source code.
+Models were trained separatly for each of the two datasets. These pre-trained models follow the ([`CC BY-NC-SA-4.0`](https://creativecommons.org/licenses/by-nc-sa/4.0/)) license and are available for academic research purposes only, no commercial use is permitted.
 
 | Model   | Params | Dataset                                                      | Environment | Species                                          | F1score | MAE¹ | RMSE² |  AC³  |                                           Download                                           |
 | ------- |:------:| ------------------------------------------------------------ | ---- | ------------------------------------------------ |:-------:|:----:|:-----:|:-----:|:--------------------------------------------------------------------------------------------:|
