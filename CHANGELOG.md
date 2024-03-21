@@ -1,11 +1,16 @@
-# [v0.2.1](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.1) (March 19, 2024)
+# [v0.2.1](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.1) (March 21, 2024)
 Code license changed to [`MIT License`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md).
 
 ## Minor Fixes
 - Change UAV dataset hosting (now in [ULiège Open Data Repository](https://dataverse.uliege.be/dataset.xhtml?persistentId=doi:10.58119/ULG/MIRUU5))
 
 ## Commits
-Alexandre-Delplanque (3):
+Alexandre-Delplanque (8):
+- [c101dca](https://github.com/Alexandre-Delplanque/HerdNet/commit/c101dcafc55385be6f825edebe4834b2cad72597) - fix: update code version
+- [031cc1a](https://github.com/Alexandre-Delplanque/HerdNet/commit/031cc1a1528d9a88ff4fe467ee684f22e56d93d3) - chore: minor change
+- [4a2c68a](https://github.com/Alexandre-Delplanque/HerdNet/commit/4a2c68a2a49efa89e890f7ae56d3288789e22cda) - fix: update code version
+- [b424c5b](https://github.com/Alexandre-Delplanque/HerdNet/commit/b424c5b7695198f179f9686d1f4dbb34015a5bbc) - Merge pull request #3 from Alexandre-Delplanque/new-license
+- [ce16958](https://github.com/Alexandre-Delplanque/HerdNet/commit/ce1695888409b2e3ad4b6d244b269d81e7ffd4ee) - chore: update CHANGELOG.md
 - [d2b9078](https://github.com/Alexandre-Delplanque/HerdNet/commit/d2b90785fafba495d7a0831efb823cfd4004c69d) - chore: final licence changes
 - [f063a82](https://github.com/Alexandre-Delplanque/HerdNet/commit/f063a82ff4dedf0b1d748a78eb11dfde99b1cfac) - chore: switch to MIT License
 - [d86ec37](https://github.com/Alexandre-Delplanque/HerdNet/commit/d86ec3736efaabbea6c1d07549e2a605a5c928ae) - fix: new link for UAV dataset #2
