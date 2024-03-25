@@ -20,6 +20,7 @@ import PIL
 import torchvision
 import numpy
 import cv2
+import pandas
 
 from albumentations import PadIfNeeded
 
@@ -55,6 +56,9 @@ def main():
     if args.csv is not None:
         patches_buffer = PatchesBuffer(args.csv, args.root, (args.height, args.width), overlap=args.overlap, min_visibility=args.min).buffer
         patches_buffer.drop(columns='limits').to_csv(os.path.join(args.dest, 'gt.csv'), index=False)
+
+        if not args.all:
+            images_paths = [os.path.join(args.root, x) for x in pandas.read_csv(args.csv)['images'].unique()]
 
     for img_path in tqdm(images_paths, desc='Exporting patches'):
         pil_img = PIL.Image.open(img_path)

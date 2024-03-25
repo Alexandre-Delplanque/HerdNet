@@ -75,12 +75,11 @@ def _ssim_loss(
         assert weights.shape[0] == channel, \
             'Number of weights must match the number of channels, ' \
                 f'got {channel} channels and {weights.shape[0]} weights'
-    
-    weights = weights.to(output.device)
 
     ssim_map = _ssim(target, output, window, window_size, channel)
 
     if weights is not None:
+        weights = weights.to(output.device)
         ssim_list = 1. - ssim_map.mean(3).mean(2)
         loss = weights * ssim_list
     else:
