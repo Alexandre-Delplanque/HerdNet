@@ -200,11 +200,10 @@ class Evaluator:
                 if i % self.print_freq == 0 or i == len(self.dataloader) - 1:
                     fig = self._vizual(image = images, target = targets, output = output)
                     wandb.log({'validation_vizuals': fig})
-
-            output = self.prepare_feeding(targets, output)
-
-            iter_metrics.feed(**output)
-            iter_metrics.aggregate()
+            for b in range(images.shape[0]):
+                batch_output = self.prepare_feeding(dict(labels= targets['labels'][b], points= targets['points'][b]), (output[0][b].unsqueeze(0), output[1][b].unsqueeze(0)))
+                iter_metrics.feed(**batch_output)
+                iter_metrics.aggregate()
             if log_meters:
                 logger.add_meter('n', sum(iter_metrics.tp) + sum(iter_metrics.fn))
                 logger.add_meter('recall', round(iter_metrics.recall(),2))
@@ -226,8 +225,10 @@ class Evaluator:
                     })
 
             iter_metrics.flush()
-
-            self.metrics.feed(**output)
+            for b in range(images.shape[0]):
+                batch_output = self.prepare_feeding(dict(labels= targets['labels'][b], points= targets['points'][b]), (output[0][b].unsqueeze(0), output[1][b].unsqueeze(0)))
+                self.metrics.feed(**batch_output)
+            #self.metrics.feed(**output)
         
         self._stored_metrics = self.metrics.copy()
 
@@ -347,13 +348,15 @@ class HerdNetEvaluator(Evaluator):
 
     def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: List[torch.Tensor]) -> dict:
 
-        gt_coords = [p[::-1] for p in targets['points'].squeeze(0).tolist()]
-        gt_labels = targets['labels'].squeeze(0).tolist()
-        
+        gt_coords = [p[::-1] for p in targets['points'].tolist()]
+        gt_labels = targets['labels'].tolist()
+
+        ndim= numpy.array(gt_coords).ndim
         gt = dict(
             loc = gt_coords,
             labels = gt_labels
         )
+
 
         up = True
         if self.stitcher is not None:
@@ -365,8 +368,8 @@ class HerdNetEvaluator(Evaluator):
         preds = dict(
             loc = locs[0],
             labels = labels[0],
-            scores = scores[0],
-            dscores = dscores[0]
+            scores = scores[0], # class scores
+            dscores = dscores[0] # heatmap scores
         )
         
         return dict(gt = gt, preds = preds, est_count = counts[0])
