@@ -1,18 +1,17 @@
 __copyright__ = \
     """
-    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    Copyright (C) 2024 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
     All rights reserved.
 
-    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
-    It is to be used for academic research purposes only, no commercial use is permitted.
+    This source code is under the MIT License.
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 29, 2023
+    Last modification: March 18, 2024
     """
 __author__ = "Alexandre Delplanque"
-__license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.2.0"
+__license__ = "MIT License"
+__version__ = "0.2.1"
 
 
 import argparse
@@ -21,6 +20,7 @@ import PIL
 import torchvision
 import numpy
 import cv2
+import pandas
 
 from albumentations import PadIfNeeded
 
@@ -56,6 +56,9 @@ def main():
     if args.csv is not None:
         patches_buffer = PatchesBuffer(args.csv, args.root, (args.height, args.width), overlap=args.overlap, min_visibility=args.min).buffer
         patches_buffer.drop(columns='limits').to_csv(os.path.join(args.dest, 'gt.csv'), index=False)
+
+        if not args.all:
+            images_paths = [os.path.join(args.root, x) for x in pandas.read_csv(args.csv)['images'].unique()]
 
     for img_path in tqdm(images_paths, desc='Exporting patches'):
         pil_img = PIL.Image.open(img_path)

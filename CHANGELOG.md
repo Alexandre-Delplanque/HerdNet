@@ -1,3 +1,41 @@
+# [v0.2.1](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.1) (March 26, 2024)
+Code license changed to [`MIT License`](https://github.com/Alexandre-Delplanque/HerdNet/blob/main/LICENSE.md).
+
+## New features
+### Classes and functions
+- `Rotate90`: New transform to rotate image by 90 degrees
+- `Trainer`: Option for validating on loss value.
+### Tools
+- `infer.py`: New optional cmd argument to rotate image before inference.
+
+## Minor Fixes
+- Change UAV dataset hosting (now in [ULiège Open Data Repository](https://dataverse.uliege.be/dataset.xhtml?persistentId=doi:10.58119/ULG/MIRUU5))
+- It is now possible to resume a training session when a validation frequency > 1 is used.
+- Solving the problem of continuously increasing training time over epochs.
+
+## Commits
+Alexandre-Delplanque (19):
+- [0fb5a68](https://github.com/Alexandre-Delplanque/HerdNet/commit/0fb5a684965b44467fb11cb79229d0ee67365854) - Merge branch 'feature' into main
+- [506e1e1](https://github.com/Alexandre-Delplanque/HerdNet/commit/506e1e137832b6e3c99f936e0b076208105b768c) - chore: update CHANGELOG.md
+- [c101dca](https://github.com/Alexandre-Delplanque/HerdNet/commit/c101dcafc55385be6f825edebe4834b2cad72597) - fix: update code version
+- [031cc1a](https://github.com/Alexandre-Delplanque/HerdNet/commit/031cc1a1528d9a88ff4fe467ee684f22e56d93d3) - chore: minor change
+- [4a2c68a](https://github.com/Alexandre-Delplanque/HerdNet/commit/4a2c68a2a49efa89e890f7ae56d3288789e22cda) - fix: update code version
+- [b424c5b](https://github.com/Alexandre-Delplanque/HerdNet/commit/b424c5b7695198f179f9686d1f4dbb34015a5bbc) - Merge pull request #3 from Alexandre-Delplanque/new-license
+- [ce16958](https://github.com/Alexandre-Delplanque/HerdNet/commit/ce1695888409b2e3ad4b6d244b269d81e7ffd4ee) - chore: update CHANGELOG.md
+- [d2b9078](https://github.com/Alexandre-Delplanque/HerdNet/commit/d2b90785fafba495d7a0831efb823cfd4004c69d) - chore: final licence changes
+- [f063a82](https://github.com/Alexandre-Delplanque/HerdNet/commit/f063a82ff4dedf0b1d748a78eb11dfde99b1cfac) - chore: switch to MIT License
+- [d6b3ffb](https://github.com/Alexandre-Delplanque/HerdNet/commit/d6b3ffbad59789455d6c24d930a53783b6c25742) - fix: change how images are rotated
+- [c67404b](https://github.com/Alexandre-Delplanque/HerdNet/commit/c67404b0fcddb810d5eb1fbfe20603a1f7f33590) - feat: add Rotate90 transform
+- [39e317a](https://github.com/Alexandre-Delplanque/HerdNet/commit/39e317ae940d2d8ce4da7d73c75f2d15f77c2330) - fix: increasing training time over epochs
+- [4baeab1](https://github.com/Alexandre-Delplanque/HerdNet/commit/4baeab147f3b31cadb5e35a05790412437a265f4) - fix: resume training when using valid_freq
+- [d86ec37](https://github.com/Alexandre-Delplanque/HerdNet/commit/d86ec3736efaabbea6c1d07549e2a605a5c928ae) - fix: new link for UAV dataset #2
+- [53dd60a](https://github.com/Alexandre-Delplanque/HerdNet/commit/53dd60a022fa1b3e1143de55256823df05d66c40) - fix: weights to device when not None (_ssim_loss)
+- [b082fc4](https://github.com/Alexandre-Delplanque/HerdNet/commit/b082fc49e3c12b69f9d2634a38a273d5daaa8434) - feat: rotation option for infer.py tool
+- [c0bfc31](https://github.com/Alexandre-Delplanque/HerdNet/commit/c0bfc3198aa7003b8ff3c0324040eedb8a29ad35) - fix: only CSV's images when -all arg is False
+- [addbc9b](https://github.com/Alexandre-Delplanque/HerdNet/commit/addbc9ba939c0f122ad79507946db020f91caa39) - Merge branch 'feature' of https://github.com/Alexandre-Delplanque/Herd-Net into feature
+- [d480319](https://github.com/Alexandre-Delplanque/HerdNet/commit/d480319f942b599cd8455912be4189d60393ac60) - feat: option for evaluation with loss in Trainer
+
+
 # [v0.2.0](https://github.com/Alexandre-Delplanque/HerdNet/releases/tag/v0.2.0) (March 29, 2023)
 ## New features
 ### Classes and functions

@@ -1,18 +1,17 @@
 __copyright__ = \
     """
-    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    Copyright (C) 2024 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
     All rights reserved.
 
-    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
-    It is to be used for academic research purposes only, no commercial use is permitted.
+    This source code is under the MIT License.
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 29, 2023
+    Last modification: March 18, 2024
     """
 __author__ = "Alexandre Delplanque"
-__license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.2.0"
+__license__ = "MIT License"
+__version__ = "0.2.1"
 
 
 ''' 
@@ -76,12 +75,11 @@ def _ssim_loss(
         assert weights.shape[0] == channel, \
             'Number of weights must match the number of channels, ' \
                 f'got {channel} channels and {weights.shape[0]} weights'
-    
-    weights = weights.to(output.device)
 
     ssim_map = _ssim(target, output, window, window_size, channel)
 
     if weights is not None:
+        weights = weights.to(output.device)
         ssim_list = 1. - ssim_map.mean(3).mean(2)
         loss = weights * ssim_list
     else:

@@ -1,18 +1,17 @@
 __copyright__ = \
     """
-    Copyright (C) 2022 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
+    Copyright (C) 2024 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
     All rights reserved.
 
-    This source code is under the CC BY-NC-SA-4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/). 
-    It is to be used for academic research purposes only, no commercial use is permitted.
+    This source code is under the MIT License.
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 29, 2023
+    Last modification: March 18, 2024
     """
 __author__ = "Alexandre Delplanque"
-__license__ = "CC BY-NC-SA 4.0"
-__version__ = "0.2.0"
+__license__ = "MIT License"
+__version__ = "0.2.1"
 
 
 import PIL
@@ -21,7 +20,7 @@ import torch
 import torchvision 
 import scipy
 
-from typing import Dict, Optional, Union, Tuple, List
+from typing import Dict, Optional, Union, Tuple, List, Any
 
 from ..utils.registry import Registry
 
@@ -582,3 +581,40 @@ class GaussianMap:
                 gauss_map[i] = mask
         
         return gauss_map
+
+@TRANSFORMS.register()
+class Rotate90:
+    ''' Rotate the image by 90 degrees '''
+
+    def __init__(
+        self, 
+        k: int = 1
+        ) -> None:
+        '''
+        Args:
+            k (int, optional):  number of times to rotate by 90 degrees. Defaults to 1.
+        '''
+
+        self.k = k
+
+    def __call__(
+        self,
+        image: Union[PIL.Image.Image, torch.Tensor],
+        target: Any,
+        ) -> Tuple[torch.Tensor,dict]:
+        '''
+        Args:
+            image (PIL.Image.Image or torch.Tensor): image to transform [C,H,W]
+            target (Any): corresponding target
+        
+        Returns:
+            Tuple[torch.Tensor, Any]:
+                the transormed image and target
+        '''
+
+        if isinstance(image, PIL.Image.Image):
+            image = torchvision.transforms.ToTensor()(image)
+        
+        image = image.rot90(k=self.k, dims=(1,2))
+
+        return image, target
