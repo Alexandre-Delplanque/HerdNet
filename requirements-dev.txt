@@ -1,0 +1,15 @@
+black
+codespell
+flake8
+importlib-metadata
+ipywidgets
+ipython
+jupyterlab
+matplotlib
+albumentations
+pandas
+#opencv-python
+#opencv-python-headless
+hydra-core
+wandb
+gdown

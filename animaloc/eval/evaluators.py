@@ -20,6 +20,7 @@ import os
 import numpy
 import wandb
 import matplotlib
+from itertools import chain
 
 matplotlib.use('Agg')
 
@@ -198,11 +199,10 @@ class Evaluator:
                 if i % self.print_freq == 0 or i == len(self.dataloader) - 1:
                     fig = self._vizual(image = images, target = targets, output = output)
                     wandb.log({'validation_vizuals': fig})
-
-            output = self.prepare_feeding(targets, output)
-
-            iter_metrics.feed(**output)
-            iter_metrics.aggregate()
+            for b in range(images.shape[0]):
+                batch_output = self.prepare_feeding(dict(labels= targets['labels'][b], points= targets['points'][b]), (output[0][b].unsqueeze(0), output[1][b].unsqueeze(0)))
+                iter_metrics.feed(**batch_output)
+                iter_metrics.aggregate()
             if log_meters:
                 logger.add_meter('n', sum(iter_metrics.tp) + sum(iter_metrics.fn))
                 logger.add_meter('recall', round(iter_metrics.recall(),2))
@@ -224,8 +224,10 @@ class Evaluator:
                     })
 
             iter_metrics.flush()
-
-            self.metrics.feed(**output)
+            for b in range(images.shape[0]):
+                batch_output = self.prepare_feeding(dict(labels= targets['labels'][b], points= targets['points'][b]), (output[0][b].unsqueeze(0), output[1][b].unsqueeze(0)))
+                self.metrics.feed(**batch_output)
+            #self.metrics.feed(**output)
         
         self._stored_metrics = self.metrics.copy()
 
@@ -345,13 +347,15 @@ class HerdNetEvaluator(Evaluator):
 
     def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: List[torch.Tensor]) -> dict:
 
-        gt_coords = [p[::-1] for p in targets['points'].squeeze(0).tolist()]
-        gt_labels = targets['labels'].squeeze(0).tolist()
-        
+        gt_coords = [p[::-1] for p in targets['points'].tolist()]
+        gt_labels = targets['labels'].tolist()
+
+        ndim= numpy.array(gt_coords).ndim
         gt = dict(
             loc = gt_coords,
             labels = gt_labels
         )
+
 
         up = True
         if self.stitcher is not None:
@@ -363,8 +367,8 @@ class HerdNetEvaluator(Evaluator):
         preds = dict(
             loc = locs[0],
             labels = labels[0],
-            scores = scores[0],
-            dscores = dscores[0]
+            scores = scores[0], # class scores
+            dscores = dscores[0] # heatmap scores
         )
         
         return dict(gt = gt, preds = preds, est_count = counts[0])
@@ -390,6 +394,27 @@ class DensityMapEvaluator(Evaluator):
         
         return dict(gt = gt, preds = preds, est_count = est_counts)
 
+@EVALUATORS.register()
+class DensityMapEvaluator(Evaluator):
+  
+    def prepare_data(self, images: Any, targets: Any) -> tuple:        
+        return images.to(self.device), targets
+
+    def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: torch.Tensor) -> dict:
+
+        gt_coords = [p[::-1] for p in targets['points'].squeeze(0).tolist()]
+        gt_labels = targets['labels'].squeeze(0).tolist()
+        
+        gt = dict(loc = gt_coords, labels = gt_labels)
+        preds = dict(loc = [], labels = [], scores = [])
+
+        _, idx = torch.max(output, dim=1)
+        masks = F.one_hot(idx, num_classes=output.shape[1]).permute(0,3,1,2)
+        output = (output * masks)
+        est_counts = output[0].sum(2).sum(1).tolist()
+        
+        return dict(gt = gt, preds = preds, est_count = est_counts)
+    
 @EVALUATORS.register()
 class FasterRCNNEvaluator(Evaluator):
 
@@ -421,3 +446,22 @@ class FasterRCNNEvaluator(Evaluator):
         counts = [preds['labels'].count(i+1) for i in range(num_classes)]
 
         return dict(gt = gt, preds = preds, est_count = counts)
+    
+@EVALUATORS.register()
+class TileEvaluator(Evaluator):
+  
+    def prepare_data(self, images: Any, targets: Any) -> tuple:        
+        return images.to(self.device), targets
+
+    def prepare_feeding(self, targets: Dict[str, torch.Tensor], output: torch.Tensor) -> dict:
+
+       
+        gt_labels = list(chain.from_iterable(targets[0].tolist()))
+        gt_labels = [int(l+1) for l in gt_labels]
+        gt = dict(loc = [], labels = gt_labels)
+        preds = dict(loc = [], labels = [], scores = [])
+
+        scores= list(chain.from_iterable(output.tolist()))
+        labels= [2 if s>0 else 1 for s in scores]
+        preds = dict(loc = [], labels = labels, scores = scores)
+        return dict(gt = gt_labels, preds = labels)

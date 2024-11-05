@@ -1,0 +1,7 @@
+name: herdnet
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - pip
+  - pip:

@@ -192,6 +192,59 @@ class DownSample:
         return image, target
 
 @TRANSFORMS.register()
+class AnimalDensity:
+    ''' Compute animal density per tile '''
+
+    def __init__(
+        self,
+        max_animals: float = 100.0,
+        anno_type: str = 'binary'
+        ) -> None:
+        '''
+        Args:
+            anno_type (str, optional): choose between 'binary' for bounding box or 'density'
+                for points. Defaults to 'binary'
+        '''
+        
+        assert anno_type in ['binary', 'density'], \
+            f'Annotations type must be \'binary\' or \'density\', got \'{anno_type}\''
+        self.max_animals= max_animals
+        self.anno_type = anno_type
+    
+    def __call__(
+        self, 
+        image: Union[PIL.Image.Image, torch.Tensor], 
+        target: Dict[str, torch.Tensor]
+        ) -> Dict[str, torch.Tensor]:
+        '''
+        Args:.
+            image (PIL.Image.Image or torch.Tensor): image of reference [C,H,W], only for 
+                pipeline convenience, original size is kept
+            target (dict): target containing at least 'boxes' (or 'points') and 'labels'
+                keys, with torch.Tensor as value. Labels must be integers!
+        
+        Returns:
+            Dict[str, torch.Tensor]
+                the down-sampled target
+        '''
+
+        if isinstance(image, PIL.Image.Image):
+            image = torchvision.transforms.ToTensor()(image)
+
+        if self.anno_type == 'binary': # binary case (empty or not empty image)
+            if len(target['labels']): # we have annotations = not empty
+                target['labels'] = torch.as_tensor([1], dtype=torch.int64)
+            else: # we don't have annotations = empty
+                target['labels'] = torch.as_tensor([0], dtype=torch.int64)
+        elif self.anno_type == 'density': #TODO: complete for density case
+            if len(target['labels']): # we have annotations = not empty
+                target['labels'] = torch.as_tensor(len(target['labels'])/self.max_animals, dtype=torch.int64)
+            else: # we don't have annotations = empty
+                target['labels'] = torch.as_tensor([0], dtype=torch.int64)
+        
+        return image, target['labels'].float()
+    
+@TRANSFORMS.register()
 class PointsToMask:
     ''' Convert points annotations to mask with a buffer option '''
 

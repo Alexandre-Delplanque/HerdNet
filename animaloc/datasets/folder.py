@@ -77,13 +77,13 @@ class FolderDataset(CSVDataset):
         self.folder_images = [i for i in os.listdir(self.root_dir) 
                                 if i.endswith(('.JPG','.jpg','.JPEG','.jpeg'))]
     
-        self._img_names = self.folder_images        
+        self._img_names = self.folder_images 
         self.anno_keys = self.data.columns
-        self.data['from_folder'] = 0
-
+        self.data['from_folder'] = 0 # all images in the folder
+        
         folder_only_images = numpy.setdiff1d(self.folder_images, self.data['images'].unique().tolist())
         folder_df = pandas.DataFrame(data=dict(images = folder_only_images))
-        folder_df['from_folder'] = 1
+        folder_df['from_folder'] = 1 # some have annotations
 
         self.data = pandas.concat([self.data, folder_df], ignore_index=True).convert_dtypes()
 
