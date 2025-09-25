@@ -369,6 +369,27 @@ class HerdNetEvaluator(Evaluator):
         
         return dict(gt = gt, preds = preds, est_count = counts[0])
 
+    @property
+    def detections(self) -> pandas.DataFrame:
+        ''' Returns detections (image id, location, label and score) in a pandas
+        dataframe with coordinates scaled to original image space when using stitcher '''
+
+        assert self._stored_metrics is not None, \
+            'No detections have been stored, please use the evaluate method first.'
+
+        img_names = self.dataloader.dataset._img_names
+        dets = self._stored_metrics.detections.copy()
+
+        for det in dets:
+            det['images'] = img_names[det['images']]
+
+            # Scale coordinates to original image space when using stitcher
+            if self.stitcher is not None and 'x' in det and 'y' in det:
+                det['x'] = det['x'] * self.stitcher.down_ratio
+                det['y'] = det['y'] * self.stitcher.down_ratio
+
+        return pandas.DataFrame(data = dets)
+
 @EVALUATORS.register()
 class DensityMapEvaluator(Evaluator):
   
