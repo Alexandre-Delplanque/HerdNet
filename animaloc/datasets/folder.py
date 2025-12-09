@@ -7,7 +7,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 18, 2024
+    Last modification: April 02, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -101,16 +101,16 @@ class FolderDataset(CSVDataset):
     def _load_target(self, index: int) -> Dict[str,List[Any]]:
         img_name = self._ordered_img_names[index]
         annotations = self.data[self.data['images'] == img_name]
-        anno_keys = list(self.anno_keys)
-        anno_keys.remove('images')
+        annotations = annotations.drop(columns='images')
+        anno_keys = annotations.columns
 
         target = {
         'image_id': [index], 
         'image_name': [img_name]
         }
 
-        nan_in_annos =  annotations[anno_keys].isnull().values.any()
-        if not nan_in_annos:
+        nan_in_labels =  annotations["labels"].isnull().any()
+        if not nan_in_labels:
             for key in anno_keys:
                 target.update({key: list(annotations[key])})
 
