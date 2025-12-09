@@ -377,7 +377,7 @@ def dla60(pretrained=None, **kwargs):  # DLA-60
                 [16, 32, 128, 256, 512, 1024],
                 block=Bottleneck, **kwargs)
     if pretrained is not None:
-        model.load_pretrained_model(pretrained, 'dla60')
+        model.load_pretrained_model(data='imagenet', name='dla60', hash='24839fc4')
     return model
 
 
@@ -396,7 +396,7 @@ def dla102(pretrained=None, **kwargs):  # DLA-102
     model = DLA([1, 1, 1, 3, 4, 1], [16, 32, 128, 256, 512, 1024],
                 block=Bottleneck, residual_root=True, **kwargs)
     if pretrained is not None:
-        model.load_pretrained_model(pretrained, 'dla102')
+        model.load_pretrained_model(data='imagenet', name='dla102', hash='d94d9790')
     return model
 
 
