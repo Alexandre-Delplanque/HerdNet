@@ -7,7 +7,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 18, 2024
+    Last modification: May 28, 2026
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -180,7 +180,7 @@ class HerdNetLMDS(LMDS):
         
         # upsample class map
         if self.up:
-            scale_factor = 16
+            scale_factor = heatmap.size(-1) // outputs[1].size(-1)
             clsmap = F.interpolate(clsmap, scale_factor=scale_factor, mode='nearest')
 
         # softmax
