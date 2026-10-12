@@ -53,7 +53,7 @@ class FocalLoss(torch.nn.Module):
 
         super().__init__()
 
-        assert reduction in ['mean', 'sum'], \
+        assert reduction in ['mean', 'sum', 'none'], \
             f'Reduction must be either \'mean\' or \'sum\', got {reduction}'
 
         self.alpha = alpha
