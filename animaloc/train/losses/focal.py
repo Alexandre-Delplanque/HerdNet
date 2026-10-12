@@ -7,7 +7,7 @@ __copyright__ = \
 
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
 
-    Last modification: March 18, 2024
+    Last modification: October 12, 2026
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -39,7 +39,7 @@ class FocalLoss(torch.nn.Module):
             alpha (int, optional): alpha parameter. Defaults to 2
             beta (int, optional): beta parameter. Defaults to 4
             reduction (str, optional): batch losses reduction. Possible
-                values are 'sum' and 'mean'. Defaults to 'sum'
+                values are 'sum', 'mean' and 'none'. Defaults to 'sum'
             weights (torch.Tensor, optional): channels weights, if specified
                 must be a torch Tensor. Defaults to None
             density_weight (str, optional): to weight each sample by objects density 
@@ -135,3 +135,5 @@ class FocalLoss(torch.nn.Module):
             return loss.mean()
         elif self.reduction == 'sum':
             return loss.sum()
+        elif self.reduction == 'none':
+            return loss
